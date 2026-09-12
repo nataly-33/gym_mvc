@@ -26,38 +26,32 @@ public class ClientModel {
         } catch (SQLException e) { e.printStackTrace(); return null; }
     }
 
-    public boolean create(int ci, String firstName, String lastName, int age,
-                          String phone, String address, double weight, double height) {
+    public boolean create(int ci, String firstName, String lastName,
+                          String phone, String address) {
         try {
             PreparedStatement ps = connection.prepareStatement(
-                "INSERT INTO client (ci,first_name,last_name,age,phone,address,weight,height)" +
-                " VALUES (?,?,?,?,?,?,?,?)");
+                "INSERT INTO client (ci,first_name,last_name,phone,address)" +
+                " VALUES (?,?,?,?,?)");
             ps.setInt(1, ci);
             ps.setString(2, firstName);
             ps.setString(3, lastName);
-            ps.setInt(4, age);
-            ps.setString(5, phone);
-            ps.setString(6, address);
-            ps.setDouble(7, weight);
-            ps.setDouble(8, height);
+            ps.setString(4, phone);
+            ps.setString(5, address);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) { e.printStackTrace(); return false; }
     }
 
-    public boolean update(int ci, String firstName, String lastName, int age,
-                          String phone, String address, double weight, double height) {
+    public boolean update(int ci, String firstName, String lastName,
+                          String phone, String address) {
         try {
             PreparedStatement ps = connection.prepareStatement(
-                "UPDATE client SET first_name=?,last_name=?,age=?,phone=?," +
-                "address=?,weight=?,height=? WHERE ci=?");
+                "UPDATE client SET first_name=?,last_name=?,phone=?," +
+                "address=? WHERE ci=?");
             ps.setString(1, firstName);
             ps.setString(2, lastName);
-            ps.setInt(3, age);
-            ps.setString(4, phone);
-            ps.setString(5, address);
-            ps.setDouble(6, weight);
-            ps.setDouble(7, height);
-            ps.setInt(8, ci);
+            ps.setString(3, phone);
+            ps.setString(4, address);
+            ps.setInt(5, ci);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) { e.printStackTrace(); return false; }
     }

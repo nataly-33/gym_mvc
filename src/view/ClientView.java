@@ -11,11 +11,8 @@ public class ClientView extends JPanel {
     private JTextField txtCI        = new JTextField(10);
     private JTextField txtFirstName = new JTextField(20);
     private JTextField txtLastName  = new JTextField(20);
-    private JTextField txtAge       = new JTextField(5);
     private JTextField txtPhone     = new JTextField(15);
     private JTextField txtAddress   = new JTextField(30);
-    private JTextField txtWeight    = new JTextField(7);
-    private JTextField txtHeight    = new JTextField(7);
 
     private JTable  tableClients = new JTable();
     private JButton btnSave      = new JButton("Save");
@@ -35,8 +32,8 @@ public class ClientView extends JPanel {
         gbc.insets = new Insets(4, 6, 4, 6);
         gbc.anchor = GridBagConstraints.WEST;
 
-        String[] labels = {"CI:", "First Name:", "Last Name:", "Age:", "Phone:", "Address:", "Weight (kg):", "Height (m):"};
-        JTextField[] fields = {txtCI, txtFirstName, txtLastName, txtAge, txtPhone, txtAddress, txtWeight, txtHeight};
+        String[] labels = {"CI:", "First Name:", "Last Name:", "Phone:", "Address:"};
+        JTextField[] fields = {txtCI, txtFirstName, txtLastName, txtPhone, txtAddress};
         for (int i = 0; i < labels.length; i++) {
             gbc.gridx = (i % 2) * 2;
             gbc.gridy = i / 2;
@@ -58,11 +55,8 @@ public class ClientView extends JPanel {
                 txtCI.setText(model.getValueAt(row, 0).toString());
                 txtFirstName.setText(model.getValueAt(row, 1).toString());
                 txtLastName.setText(model.getValueAt(row, 2).toString());
-                txtAge.setText(model.getValueAt(row, 3).toString());
-                txtPhone.setText(model.getValueAt(row, 4) != null ? model.getValueAt(row, 4).toString() : "");
-                txtAddress.setText(model.getValueAt(row, 5) != null ? model.getValueAt(row, 5).toString() : "");
-                txtWeight.setText(model.getValueAt(row, 6) != null ? model.getValueAt(row, 6).toString() : "");
-                txtHeight.setText(model.getValueAt(row, 7) != null ? model.getValueAt(row, 7).toString() : "");
+                txtPhone.setText(model.getValueAt(row, 3) != null ? model.getValueAt(row, 3).toString() : "");
+                txtAddress.setText(model.getValueAt(row, 4) != null ? model.getValueAt(row, 4).toString() : "");
             }
         });
         add(new JScrollPane(tableClients), BorderLayout.CENTER);
@@ -79,11 +73,8 @@ public class ClientView extends JPanel {
     public int    getCI()          { return Integer.parseInt(txtCI.getText().trim()); }
     public String getFirstName()   { return txtFirstName.getText().trim(); }
     public String getLastName()    { return txtLastName.getText().trim(); }
-    public int    getAge()         { return Integer.parseInt(txtAge.getText().trim()); }
     public String getPhone()       { return txtPhone.getText().trim(); }
     public String getAddress()     { return txtAddress.getText().trim(); }
-    public double getWeight()      { return Double.parseDouble(txtWeight.getText().trim()); }
-    public double getHeightM()     { return Double.parseDouble(txtHeight.getText().trim()); }
     public int    getSelectedCI()  { return selectedCI; }
 
     // --- Metodos que llama el Controller ---
@@ -114,11 +105,8 @@ public class ClientView extends JPanel {
         txtCI.setText("");
         txtFirstName.setText("");
         txtLastName.setText("");
-        txtAge.setText("");
         txtPhone.setText("");
         txtAddress.setText("");
-        txtWeight.setText("");
-        txtHeight.setText("");
         selectedCI = -1;
         tableClients.clearSelection();
     }

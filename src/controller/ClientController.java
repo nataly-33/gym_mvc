@@ -24,8 +24,7 @@ public class ClientController {
     public void saveClient() {
         boolean ok = model.create(
             view.getCI(), view.getFirstName(), view.getLastName(),
-            view.getAge(), view.getPhone(), view.getAddress(),
-            view.getWeight(), view.getHeightM());
+            view.getPhone(), view.getAddress());
         view.showMessage(ok ? "Client saved." : "Error: Could not save client.");
         if (ok) { listClients(); view.clearFields(); }
     }
@@ -33,8 +32,7 @@ public class ClientController {
     public void updateClient() {
         boolean ok = model.update(
             view.getSelectedCI(), view.getFirstName(), view.getLastName(),
-            view.getAge(), view.getPhone(), view.getAddress(),
-            view.getWeight(), view.getHeightM());
+            view.getPhone(), view.getAddress());
         view.showMessage(ok ? "Client updated." : "Error: Could not update client.");
         if (ok) { listClients(); view.clearFields(); }
     }
