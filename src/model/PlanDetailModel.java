@@ -3,9 +3,11 @@ import java.sql.*;
 
 public class PlanDetailModel {
 
+    Connection connection;
+
     public ResultSet getByPlan(int planId) {
         try {
-            Connection connection = DatabaseConnection.getInstance().getConnection();
+            this.connection = DatabaseConnection.getInstance().getConnection();
             PreparedStatement ps = connection.prepareStatement(
                 "SELECT pd.*, e.name AS exercise_name, e.video_url " +
                 "FROM PlanDetail pd JOIN Exercise e ON pd.id_exercise = e.id_exercise " +
@@ -17,7 +19,7 @@ public class PlanDetailModel {
 
     public int getNextDetailId(int planId) {
         try {
-            Connection connection = DatabaseConnection.getInstance().getConnection();
+            this.connection = DatabaseConnection.getInstance().getConnection();
             PreparedStatement ps = connection.prepareStatement(
                 "SELECT COALESCE(MAX(id_detail), 0) + 1 FROM PlanDetail WHERE id_plan = ?");
             ps.setInt(1, planId);
@@ -29,7 +31,7 @@ public class PlanDetailModel {
     public boolean create(int planId, int detailId, int exerciseId,
                           int sets, int reps, int restTime, int order) {
         try {
-            Connection connection = DatabaseConnection.getInstance().getConnection();
+            this.connection = DatabaseConnection.getInstance().getConnection();
             PreparedStatement ps = connection.prepareStatement(
                 "INSERT INTO PlanDetail " +
                 "(id_plan,id_detail,id_exercise,sets,reps,rest_time,exercise_order)" +
@@ -45,24 +47,9 @@ public class PlanDetailModel {
         } catch (SQLException e) { e.printStackTrace(); return false; }
     }
 
-    public boolean update(int planId, int detailId, int sets, int reps, int restTime) {
-        try {
-            Connection connection = DatabaseConnection.getInstance().getConnection();
-            PreparedStatement ps = connection.prepareStatement(
-                "UPDATE PlanDetail SET sets=?,reps=?,rest_time=? " +
-                "WHERE id_plan=? AND id_detail=?");
-            ps.setInt(1, sets);
-            ps.setInt(2, reps);
-            ps.setInt(3, restTime);
-            ps.setInt(4, planId);
-            ps.setInt(5, detailId);
-            return ps.executeUpdate() > 0;
-        } catch (SQLException e) { e.printStackTrace(); return false; }
-    }
-
     public boolean delete(int planId, int detailId) {
         try {
-            Connection connection = DatabaseConnection.getInstance().getConnection();
+            this.connection = DatabaseConnection.getInstance().getConnection();
             PreparedStatement ps = connection.prepareStatement(
                 "DELETE FROM PlanDetail WHERE id_plan=? AND id_detail=?");
             ps.setInt(1, planId);
@@ -73,7 +60,7 @@ public class PlanDetailModel {
 
     public boolean deleteByPlan(int planId) {
         try {
-            Connection connection = DatabaseConnection.getInstance().getConnection();
+            this.connection = DatabaseConnection.getInstance().getConnection();
             PreparedStatement ps = connection.prepareStatement(
                 "DELETE FROM PlanDetail WHERE id_plan = ?");
             ps.setInt(1, planId);

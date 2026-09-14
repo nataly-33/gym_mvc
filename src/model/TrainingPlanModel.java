@@ -3,9 +3,11 @@ import java.sql.*;
 
 public class TrainingPlanModel {
 
+    Connection connection;
+
     public ResultSet getAll() {
         try {
-            Connection connection = DatabaseConnection.getInstance().getConnection();
+            this.connection = DatabaseConnection.getInstance().getConnection();
             return connection.createStatement().executeQuery(
                 "SELECT tp.*, c.first_name || ' ' || c.last_name AS client_name " +
                 "FROM TrainingPlan tp JOIN Client c ON tp.ci_client = c.ci " +
@@ -15,7 +17,7 @@ public class TrainingPlanModel {
 
     public ResultSet getById(int id) {
         try {
-            Connection connection = DatabaseConnection.getInstance().getConnection();
+            this.connection = DatabaseConnection.getInstance().getConnection();
             PreparedStatement ps = connection.prepareStatement(
                 "SELECT * FROM TrainingPlan WHERE id_plan = ?");
             ps.setInt(1, id);
@@ -25,7 +27,7 @@ public class TrainingPlanModel {
 
     public ResultSet getByClient(int ci) {
         try {
-            Connection connection = DatabaseConnection.getInstance().getConnection();
+            this.connection = DatabaseConnection.getInstance().getConnection();
             PreparedStatement ps = connection.prepareStatement(
                 "SELECT * FROM TrainingPlan WHERE ci_client = ? ORDER BY date DESC");
             ps.setInt(1, ci);
@@ -35,7 +37,7 @@ public class TrainingPlanModel {
 
     public int create(String planName, String date, String objective, int ciClient) {
         try {
-            Connection connection = DatabaseConnection.getInstance().getConnection();
+            this.connection = DatabaseConnection.getInstance().getConnection();
             PreparedStatement ps = connection.prepareStatement(
                 "INSERT INTO TrainingPlan (plan_name,date,objective,ci_client) VALUES (?,?,?,?)",
                 Statement.RETURN_GENERATED_KEYS);
@@ -51,7 +53,7 @@ public class TrainingPlanModel {
 
     public boolean update(int id, String planName, String date, String objective) {
         try {
-            Connection connection = DatabaseConnection.getInstance().getConnection();
+            this.connection = DatabaseConnection.getInstance().getConnection();
             PreparedStatement ps = connection.prepareStatement(
                 "UPDATE TrainingPlan SET plan_name=?,date=?,objective=? WHERE id_plan=?");
             ps.setString(1, planName);
@@ -64,7 +66,7 @@ public class TrainingPlanModel {
 
     public boolean delete(int id) {
         try {
-            Connection connection = DatabaseConnection.getInstance().getConnection();
+            this.connection = DatabaseConnection.getInstance().getConnection();
             PreparedStatement ps = connection.prepareStatement(
                 "DELETE FROM TrainingPlan WHERE id_plan = ?");
             ps.setInt(1, id);
