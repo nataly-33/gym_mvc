@@ -4,139 +4,148 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
+import java.util.ArrayList;
 
 public class MeasurementView extends JPanel {
 
-    private JComboBox<Object[]> cmbClient   = new JComboBox<>();
-    private JTextField txtDate      = new JTextField(12);
-    private JTextField txtWeightKg  = new JTextField(7);
-    private JTextField txtBodyFat   = new JTextField(7);
-    private JTextField txtChestCm   = new JTextField(7);
-    private JTextField txtWaistCm   = new JTextField(7);
-    private JTextField txtHipCm     = new JTextField(7);
-    private JTextField txtNotes     = new JTextField(30);
+    private JComboBox<String> cmbClient = new JComboBox<>();
+    private ArrayList<Integer> clientCIs = new ArrayList<>();
+    
+    private JTextField txtDate      = new JTextField();
+    private JTextField txtWeightKg  = new JTextField();
+    private JTextField txtBodyFat   = new JTextField();
+    private JTextField txtChestCm   = new JTextField();
+    private JTextField txtWaistCm   = new JTextField();
+    private JTextField txtGlutes    = new JTextField();
 
-    private JTable  tableMeasurements = new JTable();
-    private JButton btnSave           = new JButton("Save");
-    private JButton btnUpdate         = new JButton("Update");
-    private JButton btnDelete         = new JButton("Delete");
-
-    private int selectedId = -1;
+    private JTable tableMeasurements;
+    private DefaultTableModel tableModel;
+    private JButton btnSave   = new JButton("Save");
+    private JButton btnUpdate = new JButton("Update");
+    private JButton btnDelete = new JButton("Delete");
 
     public MeasurementView() {
-        setLayout(new BorderLayout(10, 10));
-        setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        setLayout(new BorderLayout(20, 20));
+        setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        setBackground(UITheme.CREAM);
 
-        // --- Panel Norte: Formulario ---
-        JPanel formPanel = new JPanel(new GridBagLayout());
-        formPanel.setBorder(BorderFactory.createTitledBorder("Measurement Data"));
+        add(buildFormPanel(), BorderLayout.NORTH);
+        add(buildTablePanel(), BorderLayout.CENTER);
+        add(buildButtonPanel(), BorderLayout.SOUTH);
+    }
+
+    private JPanel buildFormPanel() {
+        JPanel panel = UITheme.createSectionPanel("Measurement Data");
+        panel.setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(4, 6, 4, 6);
+
+        UITheme.styleComboBox(cmbClient);
+
+        // Dar tamaño preferido a los campos para que no colapsen
+        Dimension fieldSize = new Dimension(120, 28);
+        txtDate.setFont(UITheme.LABEL_FONT);     txtDate.setPreferredSize(fieldSize);
+        txtWeightKg.setFont(UITheme.LABEL_FONT); txtWeightKg.setPreferredSize(fieldSize);
+        txtBodyFat.setFont(UITheme.LABEL_FONT);  txtBodyFat.setPreferredSize(fieldSize);
+        txtChestCm.setFont(UITheme.LABEL_FONT);  txtChestCm.setPreferredSize(fieldSize);
+        txtWaistCm.setFont(UITheme.LABEL_FONT);  txtWaistCm.setPreferredSize(fieldSize);
+        txtGlutes.setFont(UITheme.LABEL_FONT);   txtGlutes.setPreferredSize(fieldSize);
+
+        // --- Fila 0: Client (ancho completo, 4 columnas) ---
+        gbc.gridy = 0; gbc.gridx = 0; gbc.gridwidth = 1;
+        gbc.weightx = 0; gbc.fill = GridBagConstraints.NONE;
         gbc.anchor = GridBagConstraints.WEST;
+        gbc.insets = new Insets(6, 12, 6, 6);
+        panel.add(UITheme.styledLabel("Client:"), gbc);
 
-        String[] labels = {"Client:", "Date (YYYY-MM-DD):", "Weight (kg):", "Body Fat (%):",
-                           "Chest (cm):", "Waist (cm):", "Hip (cm):", "Notes:"};
-        Component[] comps = {cmbClient, txtDate, txtWeightKg, txtBodyFat,
-                              txtChestCm, txtWaistCm, txtHipCm, txtNotes};
-        for (int i = 0; i < labels.length; i++) {
-            gbc.gridx = (i % 2) * 2;
-            gbc.gridy = i / 2;
-            gbc.fill = GridBagConstraints.NONE;
-            formPanel.add(new JLabel(labels[i]), gbc);
-            gbc.gridx = (i % 2) * 2 + 1;
-            gbc.fill = GridBagConstraints.HORIZONTAL;
-            formPanel.add(comps[i], gbc);
-        }
-        add(formPanel, BorderLayout.NORTH);
+        gbc.gridx = 1; gbc.gridwidth = 3;   // ocupa col 1,2,3
+        gbc.weightx = 1; gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(6, 0, 6, 12);
+        panel.add(cmbClient, gbc);
 
-        // --- Panel Centro: Tabla ---
+        // IMPORTANTE: resetear gridwidth antes de las filas de dos pares
+        gbc.gridwidth = 1;
+
+        // --- Fila 1: Weight + Body Fat ---
+        UITheme.addFormRow2(panel, gbc, 1, "Weight (kg):", txtWeightKg, "Body Fat (%):", txtBodyFat);
+        // --- Fila 2: Chest + Glutes ---
+        UITheme.addFormRow2(panel, gbc, 2, "Chest (cm):", txtChestCm, "Glutes (cm):", txtGlutes);
+        // --- Fila 3: Waist + Date ---
+        UITheme.addFormRow2(panel, gbc, 3, "Waist (cm):", txtWaistCm, "Date (yyyy-MM-dd):", txtDate);
+
+        return panel;
+    }
+
+    private JScrollPane buildTablePanel() {
+        String[] cols = {"ID", "Date", "Weight(kg)", "Body Fat(%)", "Chest", "Waist", "Glutes", "Client"};
+        tableModel = new DefaultTableModel(cols, 0) {
+            public boolean isCellEditable(int r, int c) { return false; }
+        };
+        tableMeasurements = new JTable(tableModel);
+        UITheme.styleTable(tableMeasurements);
         tableMeasurements.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
         tableMeasurements.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting() && tableMeasurements.getSelectedRow() >= 0) {
                 int row = tableMeasurements.getSelectedRow();
-                DefaultTableModel model = (DefaultTableModel) tableMeasurements.getModel();
-                selectedId = Integer.parseInt(model.getValueAt(row, 0).toString());
-                txtDate.setText(model.getValueAt(row, 1) != null ? model.getValueAt(row, 1).toString() : "");
-                txtWeightKg.setText(model.getValueAt(row, 2) != null ? model.getValueAt(row, 2).toString() : "");
-                txtBodyFat.setText(model.getValueAt(row, 3) != null ? model.getValueAt(row, 3).toString() : "");
-                txtChestCm.setText(model.getValueAt(row, 4) != null ? model.getValueAt(row, 4).toString() : "");
-                txtWaistCm.setText(model.getValueAt(row, 5) != null ? model.getValueAt(row, 5).toString() : "");
-                txtHipCm.setText(model.getValueAt(row, 6) != null ? model.getValueAt(row, 6).toString() : "");
-                txtNotes.setText(model.getValueAt(row, 7) != null ? model.getValueAt(row, 7).toString() : "");
+                txtDate.setText(tableModel.getValueAt(row, 1) != null ? tableModel.getValueAt(row, 1).toString() : "");
+                txtWeightKg.setText(tableModel.getValueAt(row, 2) != null ? tableModel.getValueAt(row, 2).toString() : "");
+                txtBodyFat.setText(tableModel.getValueAt(row, 3) != null ? tableModel.getValueAt(row, 3).toString() : "");
+                txtChestCm.setText(tableModel.getValueAt(row, 4) != null ? tableModel.getValueAt(row, 4).toString() : "");
+                txtWaistCm.setText(tableModel.getValueAt(row, 5) != null ? tableModel.getValueAt(row, 5).toString() : "");
+                txtGlutes.setText(tableModel.getValueAt(row, 6) != null ? tableModel.getValueAt(row, 6).toString() : "");
             }
         });
-        add(new JScrollPane(tableMeasurements), BorderLayout.CENTER);
 
-        // --- Panel Sur: Botones ---
-        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 6));
-        btnPanel.add(btnSave);
-        btnPanel.add(btnUpdate);
-        btnPanel.add(btnDelete);
-        add(btnPanel, BorderLayout.SOUTH);
+        JScrollPane scroll = new JScrollPane(tableMeasurements);
+        scroll.getViewport().setBackground(UITheme.WHITE);
+        scroll.setPreferredSize(new Dimension(0, 280));
+        return scroll;
     }
 
-    // --- Carga de combos desde el Controller ---
+    private JPanel buildButtonPanel() {
+        UITheme.styleSaveButton(btnSave);
+        UITheme.styleUpdateButton(btnUpdate);
+        UITheme.styleDeleteButton(btnDelete);
+        return UITheme.createButtonPanel(btnSave, btnUpdate, btnDelete);
+    }
+
     public void loadClientOptions(ResultSet rs) {
         cmbClient.removeAllItems();
-        cmbClient.addItem(new Object[]{-1, "— All Clients —"});
+        clientCIs.clear();
+        cmbClient.addItem("— All Clients —");
+        clientCIs.add(-1);
         try {
             if (rs != null) {
                 while (rs.next()) {
-                    final int ci = rs.getInt("ci");
-                    final String name = rs.getString("first_name") + " " + rs.getString("last_name");
-                    cmbClient.addItem(new Object[]{ci, name});
+                    int ci = rs.getInt("ci");
+                    String name = ci + " - " + rs.getString("first_name") + " " + rs.getString("last_name");
+                    clientCIs.add(ci);
+                    cmbClient.addItem(name);
                 }
             }
         } catch (Exception e) { e.printStackTrace(); }
-        cmbClient.setRenderer((list, value, index, isSelected, cellHasFocus) -> {
-            JLabel lbl = new JLabel();
-            if (value instanceof Object[]) lbl.setText(((Object[]) value)[1].toString());
-            if (isSelected) { lbl.setBackground(list.getSelectionBackground()); lbl.setOpaque(true); }
-            return lbl;
-        });
     }
 
-    // --- Getters para el Controller ---
-    public int    getClientCI() {
-        Object[] sel = (Object[]) cmbClient.getSelectedItem();
-        return (sel != null) ? (int) sel[0] : -1;
-    }
-    public String getMeasurementDate() { return txtDate.getText().trim(); }
-    public double getWeightKg()  { return parseDouble(txtWeightKg.getText()); }
-    public double getBodyFat()   { return parseDouble(txtBodyFat.getText()); }
-    public double getChestCm()   { return parseDouble(txtChestCm.getText()); }
-    public double getWaistCm()   { return parseDouble(txtWaistCm.getText()); }
-    public double getHipCm()     { return parseDouble(txtHipCm.getText()); }
-    public String getNotes()     { return txtNotes.getText().trim(); }
-    public int    getSelectedId(){ return selectedId; }
-
-    private double parseDouble(String s) {
-        try { return Double.parseDouble(s.trim()); } catch (Exception e) { return 0.0; }
-    }
-
-    // --- Metodos que llama el Controller ---
-    public void showList(ResultSet rs) {
+    public void showList(ResultSet data) {
+        tableModel.setRowCount(0);
         try {
-            DefaultTableModel model = new DefaultTableModel();
-            if (rs != null) {
-                ResultSetMetaData meta = rs.getMetaData();
-                int cols = meta.getColumnCount();
-                String[] colNames = new String[cols];
-                for (int i = 1; i <= cols; i++) colNames[i - 1] = meta.getColumnName(i);
-                model.setColumnIdentifiers(colNames);
-                while (rs.next()) {
-                    Object[] row = new Object[cols];
-                    for (int i = 1; i <= cols; i++) row[i - 1] = rs.getObject(i);
-                    model.addRow(row);
-                }
+            while (data != null && data.next()) {
+                tableModel.addRow(new Object[]{
+                    data.getInt("id_measurement"),
+                    data.getString("date"),
+                    data.getDouble("weight"),
+                    data.getDouble("body_fat"),
+                    data.getDouble("chest"),
+                    data.getDouble("waist"),
+                    data.getDouble("glutes"),
+                    data.getString("client_name")
+                });
             }
-            tableMeasurements.setModel(model);
         } catch (Exception e) { e.printStackTrace(); }
     }
 
     public void showMessage(String msg) {
-        JOptionPane.showMessageDialog(this, msg);
+        JOptionPane.showMessageDialog(this, msg, "Gym MVC", JOptionPane.INFORMATION_MESSAGE);
     }
 
     public void clearFields() {
@@ -145,15 +154,34 @@ public class MeasurementView extends JPanel {
         txtBodyFat.setText("");
         txtChestCm.setText("");
         txtWaistCm.setText("");
-        txtHipCm.setText("");
-        txtNotes.setText("");
-        selectedId = -1;
+        txtGlutes.setText("");
         tableMeasurements.clearSelection();
     }
 
-    // --- Exponer botones y combo para el Controller ---
+    public int getClientCI() {
+        int idx = cmbClient.getSelectedIndex();
+        if (idx < 0 || idx >= clientCIs.size()) return -1;
+        return clientCIs.get(idx);
+    }
+    public String getMeasurementDate() { return txtDate.getText().trim(); }
+    public double getWeightKg()  { return parseDouble(txtWeightKg.getText()); }
+    public double getBodyFat()   { return parseDouble(txtBodyFat.getText()); }
+    public double getChestCm()   { return parseDouble(txtChestCm.getText()); }
+    public double getWaistCm()   { return parseDouble(txtWaistCm.getText()); }
+    public double getGlutes()    { return parseDouble(txtGlutes.getText()); }
+
+    public int getSelectedId() {
+        int row = tableMeasurements.getSelectedRow();
+        if (row < 0) return 0;
+        return Integer.parseInt(tableModel.getValueAt(row, 0).toString());
+    }
+
+    private double parseDouble(String s) {
+        try { return Double.parseDouble(s.trim()); } catch (Exception e) { return 0.0; }
+    }
+
     public JButton getBtnSave()   { return btnSave; }
     public JButton getBtnUpdate() { return btnUpdate; }
     public JButton getBtnDelete() { return btnDelete; }
-    public JComboBox<Object[]> getCmbClient() { return cmbClient; }
+    public JComboBox<String> getCmbClient() { return cmbClient; }
 }

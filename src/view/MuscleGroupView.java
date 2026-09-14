@@ -4,91 +4,110 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 
 public class MuscleGroupView extends JPanel {
 
     private JTextField txtName        = new JTextField(25);
-    private JTextField txtDescription = new JTextField(40);
+    private JTextField txtDescription = new JTextField(35);
 
-    private JTable  tableMuscleGroups = new JTable();
-    private JButton btnSave           = new JButton("Save");
-    private JButton btnUpdate         = new JButton("Update");
-    private JButton btnDelete         = new JButton("Delete");
+    private DefaultTableModel tableModel;
+    private JTable            tableMuscleGroups;
 
-    private int selectedId = -1;
+    private JButton btnSave   = new JButton("Save");
+    private JButton btnUpdate = new JButton("Update");
+    private JButton btnDelete = new JButton("Delete");
 
     public MuscleGroupView() {
         setLayout(new BorderLayout(10, 10));
-        setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        setBackground(UITheme.CREAM);
+        setBorder(BorderFactory.createEmptyBorder(15, 15, 10, 15));
 
-        // --- Panel Norte: Formulario ---
-        JPanel formPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 8));
-        formPanel.setBorder(BorderFactory.createTitledBorder("Muscle Group Data"));
-        formPanel.add(new JLabel("Name:"));
-        formPanel.add(txtName);
-        formPanel.add(new JLabel("Description:"));
-        formPanel.add(txtDescription);
-        add(formPanel, BorderLayout.NORTH);
+        add(buildFormPanel(),   BorderLayout.NORTH);
+        add(buildTablePanel(),  BorderLayout.CENTER);
+        add(buildButtonPanel(), BorderLayout.SOUTH);
+    }
 
-        // --- Panel Centro: Tabla ---
-        tableMuscleGroups.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+    // --- FORMULARIO ---
+    private JPanel buildFormPanel() {
+        JPanel panel = UITheme.createSectionPanel("Muscle Group Data");
+        panel.setLayout(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+
+        txtName.setFont(UITheme.LABEL_FONT);
+        txtDescription.setFont(UITheme.LABEL_FONT);
+
+        UITheme.addFormRow2(panel, gbc, 0, "Name:", txtName, "Description:", txtDescription);
+
+        return panel;
+    }
+
+    // --- TABLA ---
+    private JScrollPane buildTablePanel() {
+        String[] cols = {"ID", "Name", "Description"};
+        tableModel = new DefaultTableModel(cols, 0) {
+            public boolean isCellEditable(int r, int c) { return false; }
+        };
+        tableMuscleGroups = new JTable(tableModel);
+        UITheme.styleTable(tableMuscleGroups);
+
         tableMuscleGroups.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting() && tableMuscleGroups.getSelectedRow() >= 0) {
                 int row = tableMuscleGroups.getSelectedRow();
-                DefaultTableModel model = (DefaultTableModel) tableMuscleGroups.getModel();
-                selectedId = Integer.parseInt(model.getValueAt(row, 0).toString());
-                txtName.setText(model.getValueAt(row, 1).toString());
-                txtDescription.setText(model.getValueAt(row, 2) != null ? model.getValueAt(row, 2).toString() : "");
+                txtName.setText(tableModel.getValueAt(row, 1).toString());
+                txtDescription.setText(tableModel.getValueAt(row, 2) != null
+                    ? tableModel.getValueAt(row, 2).toString() : "");
             }
         });
-        add(new JScrollPane(tableMuscleGroups), BorderLayout.CENTER);
 
-        // --- Panel Sur: Botones ---
-        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 6));
-        btnPanel.add(btnSave);
-        btnPanel.add(btnUpdate);
-        btnPanel.add(btnDelete);
-        add(btnPanel, BorderLayout.SOUTH);
+        JScrollPane scroll = new JScrollPane(tableMuscleGroups);
+        scroll.getViewport().setBackground(UITheme.WHITE);
+        scroll.setPreferredSize(new Dimension(0, 300));
+        return scroll;
     }
 
-    // --- Getters para el Controller ---
-    public String getName()        { return txtName.getText().trim(); }
-    public String getDescription() { return txtDescription.getText().trim(); }
-    public int    getSelectedId()  { return selectedId; }
+    // --- BOTONES ---
+    private JPanel buildButtonPanel() {
+        UITheme.styleSaveButton(btnSave);
+        UITheme.styleUpdateButton(btnUpdate);
+        UITheme.styleDeleteButton(btnDelete);
+        return UITheme.createButtonPanel(btnSave, btnUpdate, btnDelete);
+    }
 
-    // --- Metodos que llama el Controller ---
-    public void showList(ResultSet rs) {
+    // --- MÉTODOS LLAMADOS POR EL CONTROLLER ---
+    public void showList(ResultSet data) {
+        tableModel.setRowCount(0);
         try {
-            DefaultTableModel model = new DefaultTableModel();
-            if (rs != null) {
-                ResultSetMetaData meta = rs.getMetaData();
-                int cols = meta.getColumnCount();
-                String[] colNames = new String[cols];
-                for (int i = 1; i <= cols; i++) colNames[i - 1] = meta.getColumnName(i);
-                model.setColumnIdentifiers(colNames);
-                while (rs.next()) {
-                    Object[] row = new Object[cols];
-                    for (int i = 1; i <= cols; i++) row[i - 1] = rs.getObject(i);
-                    model.addRow(row);
-                }
+            while (data != null && data.next()) {
+                tableModel.addRow(new Object[]{
+                    data.getInt("id_muscle_group"),
+                    data.getString("name"),
+                    data.getString("description")
+                });
             }
-            tableMuscleGroups.setModel(model);
         } catch (Exception e) { e.printStackTrace(); }
     }
 
     public void showMessage(String msg) {
-        JOptionPane.showMessageDialog(this, msg);
+        JOptionPane.showMessageDialog(this, msg, "Gym MVC", JOptionPane.INFORMATION_MESSAGE);
     }
 
     public void clearFields() {
         txtName.setText("");
         txtDescription.setText("");
-        selectedId = -1;
         tableMuscleGroups.clearSelection();
     }
 
-    // --- Exponer botones para el Controller ---
+    // --- GETTERS PARA EL CONTROLLER ---
+    public String getName()        { return txtName.getText().trim(); }
+    public String getDescription() { return txtDescription.getText().trim(); }
+
+    public int getSelectedId() {
+        int row = tableMuscleGroups.getSelectedRow();
+        if (row < 0) return 0;
+        return Integer.parseInt(tableModel.getValueAt(row, 0).toString());
+    }
+
+    // --- EXPONER BOTONES AL CONTROLLER ---
     public JButton getBtnSave()   { return btnSave; }
     public JButton getBtnUpdate() { return btnUpdate; }
     public JButton getBtnDelete() { return btnDelete; }

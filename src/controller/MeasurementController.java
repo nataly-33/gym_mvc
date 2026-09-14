@@ -34,20 +34,18 @@ public class MeasurementController {
 
     public void saveMeasurement() {
         boolean ok = model.create(
-            view.getClientCI(), view.getMeasurementDate(),
-            view.getWeightKg(), view.getBodyFat(),
-            view.getChestCm(), view.getWaistCm(),
-            view.getHipCm(), view.getNotes());
+            view.getClientCI(), view.getWeightKg(), view.getBodyFat(),
+            view.getChestCm(), view.getGlutes(), view.getWaistCm(),
+            view.getMeasurementDate());
         view.showMessage(ok ? "Measurement saved." : "Error: Could not save measurement.");
         if (ok) { listMeasurements(); view.clearFields(); }
     }
 
     public void updateMeasurement() {
         boolean ok = model.update(
-            view.getSelectedId(), view.getMeasurementDate(),
-            view.getWeightKg(), view.getBodyFat(),
-            view.getChestCm(), view.getWaistCm(),
-            view.getHipCm(), view.getNotes());
+            view.getSelectedId(), view.getWeightKg(), view.getBodyFat(),
+            view.getChestCm(), view.getGlutes(), view.getWaistCm(),
+            view.getMeasurementDate());
         view.showMessage(ok ? "Measurement updated." : "Error: Could not update.");
         if (ok) { listMeasurements(); view.clearFields(); }
     }

@@ -7,16 +7,13 @@ import java.sql.*;
 
 public class ReportModel {
 
-    private Connection connection;
-
-    public ReportModel() {
-        this.connection = DatabaseConnection.getInstance().getConnection();
-    }
+    Connection connection;
 
     public ResultSet getClientInfo(int ci) {
         try {
+            this.connection = DatabaseConnection.getInstance().getConnection();
             PreparedStatement ps = connection.prepareStatement(
-                "SELECT * FROM client WHERE ci = ?");
+                "SELECT * FROM Client WHERE ci = ?");
             ps.setInt(1, ci);
             return ps.executeQuery();
         } catch (SQLException e) { e.printStackTrace(); return null; }
@@ -24,13 +21,14 @@ public class ReportModel {
 
     public ResultSet getPlanWithDetails(int planId) {
         try {
+            this.connection = DatabaseConnection.getInstance().getConnection();
             PreparedStatement ps = connection.prepareStatement(
                 "SELECT tp.plan_name, tp.date, tp.objective, " +
                 "e.name AS exercise_name, e.video_url, " +
                 "pd.sets, pd.reps, pd.rest_time, pd.exercise_order " +
-                "FROM training_plan tp " +
-                "JOIN plan_detail pd ON tp.id_plan = pd.id_plan " +
-                "JOIN exercise e ON pd.id_exercise = e.id_exercise " +
+                "FROM TrainingPlan tp " +
+                "JOIN PlanDetail pd ON tp.id_plan = pd.id_plan " +
+                "JOIN Exercise e ON pd.id_exercise = e.id_exercise " +
                 "WHERE tp.id_plan = ? ORDER BY pd.exercise_order");
             ps.setInt(1, planId);
             return ps.executeQuery();

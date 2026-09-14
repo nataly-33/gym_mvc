@@ -1,28 +1,25 @@
 package model;
-
 import java.sql.*;
 
 public class MeasurementModel {
 
-    private Connection connection;
-
-    public MeasurementModel() {
-        this.connection = DatabaseConnection.getInstance().getConnection();
-    }
+    // Orden canónico: weight, body_fat, chest, glutes, waist, date (igual que el schema)
 
     public ResultSet getAll() {
         try {
+            Connection connection = DatabaseConnection.getInstance().getConnection();
             return connection.createStatement().executeQuery(
                 "SELECT m.*, c.first_name || ' ' || c.last_name AS client_name " +
-                "FROM measurement m JOIN client c ON m.ci_client = c.ci " +
-                "ORDER BY m.measurement_date DESC");
+                "FROM Measurement m JOIN Client c ON m.ci_client = c.ci " +
+                "ORDER BY m.date DESC");
         } catch (SQLException e) { e.printStackTrace(); return null; }
     }
 
     public ResultSet getByClient(int ci) {
         try {
+            Connection connection = DatabaseConnection.getInstance().getConnection();
             PreparedStatement ps = connection.prepareStatement(
-                "SELECT * FROM measurement WHERE ci_client = ? ORDER BY measurement_date DESC");
+                "SELECT * FROM Measurement WHERE ci_client = ? ORDER BY date DESC");
             ps.setInt(1, ci);
             return ps.executeQuery();
         } catch (SQLException e) { e.printStackTrace(); return null; }
@@ -30,54 +27,58 @@ public class MeasurementModel {
 
     public ResultSet getById(int id) {
         try {
+            Connection connection = DatabaseConnection.getInstance().getConnection();
             PreparedStatement ps = connection.prepareStatement(
-                "SELECT * FROM measurement WHERE id_measurement = ?");
+                "SELECT * FROM Measurement WHERE id_measurement = ?");
             ps.setInt(1, id);
             return ps.executeQuery();
         } catch (SQLException e) { e.printStackTrace(); return null; }
     }
 
-    public boolean create(int ci, String date, double weightKg, double bodyFat,
-                          double chest, double waist, double hip, String notes) {
+    // Firma: (ci, weight, body_fat, chest, glutes, waist, date)
+    public boolean create(int ci, double weight, double bodyFat,
+                          double chest, double glutes, double waist, String date) {
         try {
+            Connection connection = DatabaseConnection.getInstance().getConnection();
             PreparedStatement ps = connection.prepareStatement(
-                "INSERT INTO measurement " +
-                "(ci_client,measurement_date,weight_kg,body_fat_pct,chest_cm,waist_cm,hip_cm,notes)" +
-                " VALUES (?,?,?,?,?,?,?,?)");
+                "INSERT INTO Measurement " +
+                "(ci_client, weight, body_fat, chest, glutes, waist, date)" +
+                " VALUES (?,?,?,?,?,?,?)");
             ps.setInt(1, ci);
-            ps.setString(2, date);
-            ps.setDouble(3, weightKg);
-            ps.setDouble(4, bodyFat);
-            ps.setDouble(5, chest);
+            ps.setDouble(2, weight);
+            ps.setDouble(3, bodyFat);
+            ps.setDouble(4, chest);
+            ps.setDouble(5, glutes);
             ps.setDouble(6, waist);
-            ps.setDouble(7, hip);
-            ps.setString(8, notes);
+            ps.setString(7, date);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) { e.printStackTrace(); return false; }
     }
 
-    public boolean update(int id, String date, double weightKg, double bodyFat,
-                          double chest, double waist, double hip, String notes) {
+    // Firma: (id, weight, body_fat, chest, glutes, waist, date)
+    public boolean update(int id, double weight, double bodyFat,
+                          double chest, double glutes, double waist, String date) {
         try {
+            Connection connection = DatabaseConnection.getInstance().getConnection();
             PreparedStatement ps = connection.prepareStatement(
-                "UPDATE measurement SET measurement_date=?,weight_kg=?,body_fat_pct=?," +
-                "chest_cm=?,waist_cm=?,hip_cm=?,notes=? WHERE id_measurement=?");
-            ps.setString(1, date);
-            ps.setDouble(2, weightKg);
-            ps.setDouble(3, bodyFat);
-            ps.setDouble(4, chest);
+                "UPDATE Measurement SET weight=?, body_fat=?, chest=?, " +
+                "glutes=?, waist=?, date=? WHERE id_measurement=?");
+            ps.setDouble(1, weight);
+            ps.setDouble(2, bodyFat);
+            ps.setDouble(3, chest);
+            ps.setDouble(4, glutes);
             ps.setDouble(5, waist);
-            ps.setDouble(6, hip);
-            ps.setString(7, notes);
-            ps.setInt(8, id);
+            ps.setString(6, date);
+            ps.setInt(7, id);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) { e.printStackTrace(); return false; }
     }
 
     public boolean delete(int id) {
         try {
+            Connection connection = DatabaseConnection.getInstance().getConnection();
             PreparedStatement ps = connection.prepareStatement(
-                "DELETE FROM measurement WHERE id_measurement = ?");
+                "DELETE FROM Measurement WHERE id_measurement = ?");
             ps.setInt(1, id);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) { e.printStackTrace(); return false; }

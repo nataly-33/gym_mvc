@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS Client (
     first_name TEXT NOT NULL,
     last_name TEXT NOT NULL,
     phone TEXT,
-    address TEXT,
+    address TEXT
 );
 
 CREATE TABLE IF NOT EXISTS MuscleGroup (

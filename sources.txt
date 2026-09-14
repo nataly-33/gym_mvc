@@ -9,6 +9,7 @@ src/model/MuscleGroupModel.java
 src/Main.java
 src/view/TrainingPlanView.java
 src/view/ReportView.java
+src/view/UITheme.java
 src/view/MeasurementView.java
 src/view/MuscleGroupView.java
 src/view/ClientView.java

@@ -4,101 +4,120 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 
 public class ClientView extends JPanel {
 
+    // IMPORTANTE: inicializar con columnas para que tengan tamaño visible
     private JTextField txtCI        = new JTextField(10);
-    private JTextField txtFirstName = new JTextField(20);
-    private JTextField txtLastName  = new JTextField(20);
-    private JTextField txtPhone     = new JTextField(15);
-    private JTextField txtAddress   = new JTextField(30);
+    private JTextField txtFirstName = new JTextField(18);
+    private JTextField txtLastName  = new JTextField(18);
+    private JTextField txtPhone     = new JTextField(14);
+    private JTextField txtAddress   = new JTextField(35);
 
-    private JTable  tableClients = new JTable();
-    private JButton btnSave      = new JButton("Save");
-    private JButton btnUpdate    = new JButton("Update");
-    private JButton btnDelete    = new JButton("Delete");
+    private DefaultTableModel tableModel;
+    private JTable            tableClients;
 
-    private int selectedCI = -1;
+    private JButton btnSave   = new JButton("Save");
+    private JButton btnUpdate = new JButton("Update");
+    private JButton btnDelete = new JButton("Delete");
 
     public ClientView() {
         setLayout(new BorderLayout(10, 10));
-        setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        setBackground(UITheme.CREAM);
+        setBorder(BorderFactory.createEmptyBorder(15, 15, 10, 15));
 
-        // --- Panel Norte: Formulario ---
-        JPanel formPanel = new JPanel(new GridBagLayout());
-        formPanel.setBorder(BorderFactory.createTitledBorder("Client Data"));
+        add(buildFormPanel(),   BorderLayout.NORTH);
+        add(buildTablePanel(),  BorderLayout.CENTER);
+        add(buildButtonPanel(), BorderLayout.SOUTH);
+    }
+
+    // --- FORMULARIO ---
+    private JPanel buildFormPanel() {
+        JPanel panel = UITheme.createSectionPanel("Client Data");
+        panel.setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(4, 6, 4, 6);
-        gbc.anchor = GridBagConstraints.WEST;
 
-        String[] labels = {"CI:", "First Name:", "Last Name:", "Phone:", "Address:"};
-        JTextField[] fields = {txtCI, txtFirstName, txtLastName, txtPhone, txtAddress};
-        for (int i = 0; i < labels.length; i++) {
-            gbc.gridx = (i % 2) * 2;
-            gbc.gridy = i / 2;
-            gbc.fill = GridBagConstraints.NONE;
-            formPanel.add(new JLabel(labels[i]), gbc);
-            gbc.gridx = (i % 2) * 2 + 1;
-            gbc.fill = GridBagConstraints.HORIZONTAL;
-            formPanel.add(fields[i], gbc);
-        }
-        add(formPanel, BorderLayout.NORTH);
+        // Fuente para los campos
+        Font fieldFont = UITheme.LABEL_FONT;
+        txtCI.setFont(fieldFont);
+        txtFirstName.setFont(fieldFont);
+        txtLastName.setFont(fieldFont);
+        txtPhone.setFont(fieldFont);
+        txtAddress.setFont(fieldFont);
 
-        // --- Panel Centro: Tabla ---
-        tableClients.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        // Fila 0: CI y First Name
+        UITheme.addFormRow2(panel, gbc, 0, "CI:", txtCI, "First Name:", txtFirstName);
+        // Fila 1: Last Name y Phone
+        UITheme.addFormRow2(panel, gbc, 1, "Last Name:", txtLastName, "Phone:", txtPhone);
+        // Fila 2: Address (ocupa todo el ancho)
+        gbc.gridy = 2; gbc.gridx = 0;
+        gbc.weightx = 0; gbc.fill = GridBagConstraints.NONE;
+        gbc.insets = new Insets(6, 12, 6, 6);
+        panel.add(UITheme.styledLabel("Address:"), gbc);
+        gbc.gridx = 1; gbc.gridwidth = 3;
+        gbc.weightx = 1; gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(6, 0, 6, 12);
+        panel.add(txtAddress, gbc);
+        gbc.gridwidth = 1; // restaurar
+
+        return panel;
+    }
+
+    // --- TABLA ---
+    private JScrollPane buildTablePanel() {
+        String[] cols = {"CI", "First Name", "Last Name", "Phone", "Address"};
+        tableModel = new DefaultTableModel(cols, 0) {
+            public boolean isCellEditable(int r, int c) { return false; }
+        };
+        tableClients = new JTable(tableModel);
+        UITheme.styleTable(tableClients);
+
+        // Click en fila llena el formulario automáticamente
         tableClients.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting() && tableClients.getSelectedRow() >= 0) {
                 int row = tableClients.getSelectedRow();
-                DefaultTableModel model = (DefaultTableModel) tableClients.getModel();
-                selectedCI = Integer.parseInt(model.getValueAt(row, 0).toString());
-                txtCI.setText(model.getValueAt(row, 0).toString());
-                txtFirstName.setText(model.getValueAt(row, 1).toString());
-                txtLastName.setText(model.getValueAt(row, 2).toString());
-                txtPhone.setText(model.getValueAt(row, 3) != null ? model.getValueAt(row, 3).toString() : "");
-                txtAddress.setText(model.getValueAt(row, 4) != null ? model.getValueAt(row, 4).toString() : "");
+                txtCI.setText(tableModel.getValueAt(row, 0).toString());
+                txtFirstName.setText(tableModel.getValueAt(row, 1).toString());
+                txtLastName.setText(tableModel.getValueAt(row, 2).toString());
+                txtPhone.setText(tableModel.getValueAt(row, 3) != null
+                    ? tableModel.getValueAt(row, 3).toString() : "");
+                txtAddress.setText(tableModel.getValueAt(row, 4) != null
+                    ? tableModel.getValueAt(row, 4).toString() : "");
             }
         });
-        add(new JScrollPane(tableClients), BorderLayout.CENTER);
 
-        // --- Panel Sur: Botones ---
-        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 6));
-        btnPanel.add(btnSave);
-        btnPanel.add(btnUpdate);
-        btnPanel.add(btnDelete);
-        add(btnPanel, BorderLayout.SOUTH);
+        JScrollPane scroll = new JScrollPane(tableClients);
+        scroll.getViewport().setBackground(UITheme.WHITE);
+        scroll.setPreferredSize(new Dimension(0, 300));
+        return scroll;
     }
 
-    // --- Getters para el Controller ---
-    public int    getCI()          { return Integer.parseInt(txtCI.getText().trim()); }
-    public String getFirstName()   { return txtFirstName.getText().trim(); }
-    public String getLastName()    { return txtLastName.getText().trim(); }
-    public String getPhone()       { return txtPhone.getText().trim(); }
-    public String getAddress()     { return txtAddress.getText().trim(); }
-    public int    getSelectedCI()  { return selectedCI; }
+    // --- BOTONES ---
+    private JPanel buildButtonPanel() {
+        UITheme.styleSaveButton(btnSave);
+        UITheme.styleUpdateButton(btnUpdate);
+        UITheme.styleDeleteButton(btnDelete);
+        return UITheme.createButtonPanel(btnSave, btnUpdate, btnDelete);
+    }
 
-    // --- Metodos que llama el Controller ---
-    public void showList(ResultSet rs) {
+    // --- MÉTODOS LLAMADOS POR EL CONTROLLER ---
+    public void showList(ResultSet data) {
+        tableModel.setRowCount(0);
         try {
-            DefaultTableModel model = new DefaultTableModel();
-            if (rs != null) {
-                ResultSetMetaData meta = rs.getMetaData();
-                int cols = meta.getColumnCount();
-                String[] colNames = new String[cols];
-                for (int i = 1; i <= cols; i++) colNames[i - 1] = meta.getColumnName(i);
-                model.setColumnIdentifiers(colNames);
-                while (rs.next()) {
-                    Object[] row = new Object[cols];
-                    for (int i = 1; i <= cols; i++) row[i - 1] = rs.getObject(i);
-                    model.addRow(row);
-                }
+            while (data != null && data.next()) {
+                tableModel.addRow(new Object[]{
+                    data.getInt("ci"),
+                    data.getString("first_name"),
+                    data.getString("last_name"),
+                    data.getString("phone"),
+                    data.getString("address")
+                });
             }
-            tableClients.setModel(model);
         } catch (Exception e) { e.printStackTrace(); }
     }
 
     public void showMessage(String msg) {
-        JOptionPane.showMessageDialog(this, msg);
+        JOptionPane.showMessageDialog(this, msg, "Gym MVC", JOptionPane.INFORMATION_MESSAGE);
     }
 
     public void clearFields() {
@@ -107,11 +126,26 @@ public class ClientView extends JPanel {
         txtLastName.setText("");
         txtPhone.setText("");
         txtAddress.setText("");
-        selectedCI = -1;
         tableClients.clearSelection();
     }
 
-    // --- Exponer botones para el Controller ---
+    // --- GETTERS PARA EL CONTROLLER ---
+    public int getCI() {
+        try { return Integer.parseInt(txtCI.getText().trim()); }
+        catch (NumberFormatException e) { return 0; }
+    }
+    public String getFirstName() { return txtFirstName.getText().trim(); }
+    public String getLastName()  { return txtLastName.getText().trim(); }
+    public String getPhone()     { return txtPhone.getText().trim(); }
+    public String getAddress()   { return txtAddress.getText().trim(); }
+
+    public int getSelectedCI() {
+        int row = tableClients.getSelectedRow();
+        if (row < 0) return 0;
+        return Integer.parseInt(tableModel.getValueAt(row, 0).toString());
+    }
+
+    // --- EXPONER BOTONES AL CONTROLLER ---
     public JButton getBtnSave()   { return btnSave; }
     public JButton getBtnUpdate() { return btnUpdate; }
     public JButton getBtnDelete() { return btnDelete; }

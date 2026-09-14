@@ -1,26 +1,23 @@
 package model;
-
 import java.sql.*;
 
 public class MuscleGroupModel {
 
-    private Connection connection;
-
-    public MuscleGroupModel() {
-        this.connection = DatabaseConnection.getInstance().getConnection();
-    }
+    Connection connection;
 
     public ResultSet getAll() {
         try {
+             this.connection = DatabaseConnection.getInstance().getConnection();
             return connection.createStatement().executeQuery(
-                "SELECT * FROM muscle_group ORDER BY name");
+                "SELECT * FROM MuscleGroup ORDER BY id_muscle_group ASC");
         } catch (SQLException e) { e.printStackTrace(); return null; }
     }
 
     public ResultSet getById(int id) {
         try {
+             this.connection = DatabaseConnection.getInstance().getConnection();
             PreparedStatement ps = connection.prepareStatement(
-                "SELECT * FROM muscle_group WHERE id_muscle_group = ?");
+                "SELECT * FROM MuscleGroup WHERE id_muscle_group = ?");
             ps.setInt(1, id);
             return ps.executeQuery();
         } catch (SQLException e) { e.printStackTrace(); return null; }
@@ -28,8 +25,9 @@ public class MuscleGroupModel {
 
     public boolean create(String name, String description) {
         try {
+            this.connection = DatabaseConnection.getInstance().getConnection();
             PreparedStatement ps = connection.prepareStatement(
-                "INSERT INTO muscle_group (name, description) VALUES (?, ?)");
+                "INSERT INTO MuscleGroup (name, description) VALUES (?, ?)");
             ps.setString(1, name);
             ps.setString(2, description);
             return ps.executeUpdate() > 0;
@@ -38,8 +36,9 @@ public class MuscleGroupModel {
 
     public boolean update(int id, String name, String description) {
         try {
+            this.connection = DatabaseConnection.getInstance().getConnection();
             PreparedStatement ps = connection.prepareStatement(
-                "UPDATE muscle_group SET name=?, description=? WHERE id_muscle_group=?");
+                "UPDATE MuscleGroup SET name=?,description=? WHERE id_muscle_group=?");
             ps.setString(1, name);
             ps.setString(2, description);
             ps.setInt(3, id);
@@ -49,8 +48,9 @@ public class MuscleGroupModel {
 
     public boolean delete(int id) {
         try {
+            this.connection = DatabaseConnection.getInstance().getConnection();
             PreparedStatement ps = connection.prepareStatement(
-                "DELETE FROM muscle_group WHERE id_muscle_group = ?");
+                "DELETE FROM MuscleGroup WHERE id_muscle_group = ?");
             ps.setInt(1, id);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) { e.printStackTrace(); return false; }
