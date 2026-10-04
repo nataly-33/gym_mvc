@@ -68,7 +68,6 @@ public class Main {
         MuscleGroupModel  muscleGroupModel = new MuscleGroupModel();
         ExerciseModel     exerciseModel    = new ExerciseModel();
         TrainingPlanModel planModel        = new TrainingPlanModel();
-        PlanDetailModel   detailModel      = new PlanDetailModel();
         MeasurementModel  measurementModel = new MeasurementModel();
         ReportModel       reportModel      = new ReportModel();
 
@@ -76,7 +75,7 @@ public class Main {
         SwingUtilities.invokeLater(() -> {
             MainFrame frame = new MainFrame(
                 clientModel, muscleGroupModel, exerciseModel,
-                planModel, detailModel, measurementModel, reportModel);
+                planModel, measurementModel, reportModel);
             frame.setVisible(true);
         });
     }

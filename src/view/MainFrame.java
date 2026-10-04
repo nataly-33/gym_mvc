@@ -11,7 +11,6 @@ public class MainFrame extends JFrame {
                      MuscleGroupModel muscleGroupModel,
                      ExerciseModel exerciseModel,
                      TrainingPlanModel planModel,
-                     PlanDetailModel detailModel,
                      MeasurementModel measurementModel,
                      ReportModel reportModel) {
 
@@ -44,7 +43,7 @@ public class MainFrame extends JFrame {
         new ClientController(clientView, clientModel);
         new MuscleGroupController(muscleGroupView, muscleGroupModel);
         new ExerciseController(exerciseView, exerciseModel, muscleGroupModel);
-        new TrainingPlanController(planView, planModel, detailModel,
+        new TrainingPlanController(planView, planModel,
                                    clientModel, exerciseModel);
         new MeasurementController(measurementView, measurementModel, clientModel);
         new ReportController(reportView, reportModel, clientModel, planModel);

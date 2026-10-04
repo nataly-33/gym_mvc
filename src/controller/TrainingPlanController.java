@@ -9,18 +9,15 @@ public class TrainingPlanController {
 
     private TrainingPlanView  view;
     private TrainingPlanModel planModel;
-    private PlanDetailModel   detailModel;
     private ClientModel       clientModel;
     private ExerciseModel     exerciseModel;
 
     public TrainingPlanController(TrainingPlanView view,
                                   TrainingPlanModel planModel,
-                                  PlanDetailModel   detailModel,
                                   ClientModel       clientModel,
                                   ExerciseModel     exerciseModel) {
         this.view          = view;
         this.planModel     = planModel;
-        this.detailModel   = detailModel;
         this.clientModel   = clientModel;
         this.exerciseModel = exerciseModel;
 
@@ -65,7 +62,8 @@ public class TrainingPlanController {
         if (row < 0) return;
         int planId = (int) view.getTableSavedPlans().getModel().getValueAt(row, 0);
         view.loadPlanForm(planModel.getById(planId));
-        view.loadDetailRows(detailModel.getByPlan(planId));
+        // Por composición, se consultan los detalles a través de planModel
+        view.loadDetailRows(planModel.getDetailsByPlan(planId));
     }
 
     // Agregar una fila vacía al área de detalles
@@ -78,33 +76,26 @@ public class TrainingPlanController {
         view.removeLastExerciseRow();
     }
 
-    // Crear plan + todos sus detalles en una sola operación
-    // Columnas schema TrainingPlan: plan_name, date, objective, ci_client
-    // Columnas schema PlanDetail: id_plan, id_detail, id_exercise, sets, reps, rest_time, exercise_order
+    // Crear plan + todos sus detalles a través de planModel (composición)
     public void savePlan() {
         int[][] details = view.getPlanDetailsData();
         if (details.length == 0) {
             view.showMessage("Add at least one exercise to the plan.");
             return;
         }
-        int planId = planModel.create(
+        boolean ok = planModel.saveWithDetails(
             view.getPlanName(), view.getDate(),
-            view.getObjective(), view.getClientCI());
-        if (planId == -1) {
+            view.getObjective(), view.getClientCI(), details);
+        if (!ok) {
             view.showMessage("Error: Could not create training plan.");
             return;
-        }
-        for (int[] d : details) {
-            // d[0]=id_exercise, d[1]=sets, d[2]=reps, d[3]=rest_time, d[4]=exercise_order
-            int nextId = detailModel.getNextDetailId(planId);
-            detailModel.create(planId, nextId, d[0], d[1], d[2], d[3], d[4]);
         }
         view.showMessage("Training plan saved successfully.");
         listTrainingPlans();
         view.clearFields();
     }
 
-    // Actualizar cabecera + borrar detalles anteriores + recrear desde filas actuales
+    // Actualizar cabecera + detalles a través de planModel (composición)
     public void updatePlan() {
         int planId = view.getSelectedPlanId();
         if (planId == -1) {
@@ -116,33 +107,29 @@ public class TrainingPlanController {
             view.showMessage("Add at least one exercise to the plan.");
             return;
         }
-        // Actualizar cabecera TrainingPlan: plan_name, date, objective (ci_client no cambia)
-        boolean ok = planModel.update(
+        boolean ok = planModel.updateWithDetails(
             planId, view.getPlanName(),
-            view.getDate(), view.getObjective());
-        if (!ok) { view.showMessage("Error: Could not update plan."); return; }
-
-        // Borrar detalles anteriores y recrear desde filas actuales
-        detailModel.deleteByPlan(planId);
-        for (int[] d : details) {
-            int nextId = detailModel.getNextDetailId(planId);
-            detailModel.create(planId, nextId, d[0], d[1], d[2], d[3], d[4]);
+            view.getDate(), view.getObjective(), details);
+        if (!ok) {
+            view.showMessage("Error: Could not update plan.");
+            return;
         }
+
         view.showMessage("Training plan updated.");
         listTrainingPlans();
         view.clearFields();
     }
 
+    // Eliminar plan (por composición elimina automáticamente sus detalles)
     public void deletePlan() {
         int planId = view.getSelectedPlanId();
         if (planId == -1) {
             view.showMessage("Select a saved plan first.");
             return;
         }
-        // Eliminar primero los detalles (FK), luego el plan
-        detailModel.deleteByPlan(planId);
         boolean ok = planModel.delete(planId);
         view.showMessage(ok ? "Plan deleted." : "Error: Could not delete plan.");
         if (ok) { listTrainingPlans(); view.clearFields(); }
     }
 }
+
