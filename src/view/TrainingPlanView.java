@@ -15,6 +15,13 @@ public class TrainingPlanView extends JPanel {
     private JComboBox<String> cmbClient = new JComboBox<>();
     private JTextField txtObjective = new JTextField(35);
 
+    // --- Indicador visual y botones del Patrón State ---
+    private JLabel  lblStatusBadge = new JLabel("  ESTADO: BORRADOR  ", SwingConstants.CENTER);
+    private JButton btnActivate    = new JButton("▶ Activar");
+    private JButton btnComplete    = new JButton("✔ Completar");
+    private JButton btnCancel      = new JButton("✕ Cancelar");
+    private JButton btnReopen      = new JButton("↺ Reabrir Borrador");
+
     // --- Filas de ejercicios (el "carrito") ---
     private List<ExerciseItem>     exerciseItems = new ArrayList<>();
     private List<ExerciseRowPanel> exerciseRows  = new ArrayList<>();
@@ -28,7 +35,7 @@ public class TrainingPlanView extends JPanel {
     // --- Mapeo clienteCI por índice del combo ---
     private List<Integer> clientCiList = new ArrayList<>();
 
-    // --- Botones ---
+    // --- Botones CRUD ---
     private JButton btnAdd    = new JButton("Add ▼");
     private JButton btnRemove = new JButton("✕ Remove Last");
     private JButton btnSave   = new JButton("Save Plan");
@@ -37,6 +44,7 @@ public class TrainingPlanView extends JPanel {
 
     // --- Estado: plan seleccionado ---
     private int selectedPlanId = -1;
+    private String currentPlanStatus = "Borrador";
 
     public TrainingPlanView() {
         setLayout(new BorderLayout(8, 8));
@@ -49,12 +57,15 @@ public class TrainingPlanView extends JPanel {
         txtObjective.setFont(UITheme.LABEL_FONT);
         UITheme.styleComboBox(cmbClient);
 
-        // Estilo de botones
+        // Estilo de botones CRUD
         UITheme.styleSecondaryButton(btnAdd);
         UITheme.styleSecondaryButton(btnRemove);
         UITheme.styleSaveButton(btnSave);
         UITheme.styleUpdateButton(btnUpdate);
         UITheme.styleDeleteButton(btnDelete);
+
+        // Estilo de botones State
+        styleStateButtons();
 
         // Split: 70% izquierda (formulario + filas), 30% derecha (planes guardados)
         JSplitPane split = new JSplitPane(
@@ -67,23 +78,76 @@ public class TrainingPlanView extends JPanel {
 
         add(split, BorderLayout.CENTER);
         add(buildButtonPanel(), BorderLayout.SOUTH);
+
+        // Estado inicial de la interfaz
+        updateStateUI("Borrador");
+    }
+
+    private void styleStateButtons() {
+        lblStatusBadge.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        lblStatusBadge.setOpaque(true);
+        lblStatusBadge.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(0xB8860B), 2),
+            BorderFactory.createEmptyBorder(4, 12, 4, 12)
+        ));
+
+        btnActivate.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btnActivate.setBackground(new Color(0x3B82F6));
+        btnActivate.setForeground(Color.WHITE);
+        btnActivate.setFocusPainted(false);
+
+        btnComplete.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btnComplete.setBackground(new Color(0x10B981));
+        btnComplete.setForeground(Color.WHITE);
+        btnComplete.setFocusPainted(false);
+
+        btnCancel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btnCancel.setBackground(new Color(0xEF4444));
+        btnCancel.setForeground(Color.WHITE);
+        btnCancel.setFocusPainted(false);
+
+        btnReopen.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btnReopen.setBackground(new Color(0x6B7280));
+        btnReopen.setForeground(Color.WHITE);
+        btnReopen.setFocusPainted(false);
     }
 
     // =========================================================
-    // PANEL IZQUIERDO: formulario + filas de ejercicios
+    // PANEL IZQUIERDO: formulario + barra de estado + filas
     // =========================================================
     private JPanel buildLeftPanel() {
         JPanel panel = new JPanel(new BorderLayout(0, 10));
         panel.setBackground(UITheme.CREAM);
 
         // --- Formulario superior ---
-        JPanel formPanel = UITheme.createSectionPanel("Training Plan");
+        JPanel formPanel = UITheme.createSectionPanel("Training Plan Header & Lifecycle State");
         formPanel.setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
 
-        UITheme.addFormRow2(formPanel, gbc, 0, "Plan Name:", txtPlanName, "Date (yyyy-MM-dd):", txtDate);
+        // Fila 0: Barra de Estado (Patrón State)
+        gbc.gridy = 0; gbc.gridx = 0; gbc.gridwidth = 1;
+        gbc.insets = new Insets(4, 12, 8, 6);
+        gbc.anchor = GridBagConstraints.WEST;
+        formPanel.add(UITheme.styledLabel("Lifecycle State:"), gbc);
 
-        gbc.gridy = 1; gbc.gridx = 0; gbc.gridwidth = 1;
+        JPanel stateBar = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        stateBar.setBackground(UITheme.CREAM);
+        stateBar.add(lblStatusBadge);
+        stateBar.add(btnActivate);
+        stateBar.add(btnComplete);
+        stateBar.add(btnCancel);
+        stateBar.add(btnReopen);
+
+        gbc.gridx = 1; gbc.gridwidth = 3; gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(4, 0, 8, 12);
+        formPanel.add(stateBar, gbc);
+        gbc.gridwidth = 1;
+
+        // Fila 1: Plan Name y Date
+        UITheme.addFormRow2(formPanel, gbc, 1, "Plan Name:", txtPlanName, "Date (yyyy-MM-dd):", txtDate);
+
+        // Fila 2: Client Combo
+        gbc.gridy = 2; gbc.gridx = 0; gbc.gridwidth = 1;
         gbc.weightx = 0; gbc.fill = GridBagConstraints.NONE;
         gbc.anchor = GridBagConstraints.WEST;
         gbc.insets = new Insets(6, 12, 6, 6);
@@ -95,14 +159,15 @@ public class TrainingPlanView extends JPanel {
         formPanel.add(cmbClient, gbc);
         gbc.gridwidth = 1;
 
-        UITheme.addFormRow(formPanel, gbc, 2, "Objective:", txtObjective);
+        // Fila 3: Objective
+        UITheme.addFormRow(formPanel, gbc, 3, "Objective:", txtObjective);
 
-        // --- Botones Add/Remove ---
+        // --- Botones Add/Remove de detalles ---
         JPanel addRemovePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 6));
         addRemovePanel.setBackground(UITheme.CREAM);
         addRemovePanel.add(btnAdd);
         addRemovePanel.add(btnRemove);
-        JLabel hint = UITheme.styledLabel("← Select exercise, fill Sets/Reps/Rest, then Add");
+        JLabel hint = UITheme.styledLabel("← Add exercises (Locked if plan is Active or Completed)");
         hint.setForeground(new Color(0x7A6A30));
         addRemovePanel.add(hint);
 
@@ -116,7 +181,7 @@ public class TrainingPlanView extends JPanel {
         rowsScroll.getViewport().setBackground(UITheme.CREAM);
         rowsScroll.setBorder(BorderFactory.createTitledBorder(
             BorderFactory.createLineBorder(UITheme.GOLD, 1),
-            "Exercise Details (unsaved)",
+            "Exercise Details (Plan Details)",
             javax.swing.border.TitledBorder.LEFT,
             javax.swing.border.TitledBorder.TOP,
             UITheme.LABEL_FONT, UITheme.TEXT));
@@ -138,15 +203,18 @@ public class TrainingPlanView extends JPanel {
         JPanel panel = UITheme.createSectionPanel("Saved Plans");
         panel.setLayout(new BorderLayout());
 
-        // Columnas basadas en el schema: id_plan, plan_name, date, ci_client → client_name
-        String[] cols = {"ID", "Plan Name", "Date", "Client"};
+        // Columna 4: Status (Patrón State)
+        String[] cols = {"ID", "Plan Name", "Date", "Client", "Status"};
         savedPlansModel = new DefaultTableModel(cols, 0) {
             public boolean isCellEditable(int r, int c) { return false; }
         };
         tableSavedPlans = new JTable(savedPlansModel);
         UITheme.styleTable(tableSavedPlans);
         tableSavedPlans.getColumnModel().getColumn(0).setPreferredWidth(30);
-        tableSavedPlans.getColumnModel().getColumn(1).setPreferredWidth(120);
+        tableSavedPlans.getColumnModel().getColumn(1).setPreferredWidth(110);
+        tableSavedPlans.getColumnModel().getColumn(2).setPreferredWidth(80);
+        tableSavedPlans.getColumnModel().getColumn(3).setPreferredWidth(100);
+        tableSavedPlans.getColumnModel().getColumn(4).setPreferredWidth(85);
 
         JScrollPane scroll = new JScrollPane(tableSavedPlans);
         scroll.getViewport().setBackground(UITheme.WHITE);
@@ -162,6 +230,77 @@ public class TrainingPlanView extends JPanel {
     }
 
     // =========================================================
+    // CONTROL VISUAL DE ESTADOS (PATRÓN STATE)
+    // =========================================================
+    public void updateStateUI(String status) {
+        this.currentPlanStatus = (status != null && !status.trim().isEmpty()) ? status : "Borrador";
+
+        if ("Activo".equalsIgnoreCase(currentPlanStatus)) {
+            lblStatusBadge.setText("  ESTADO: ACTIVO (EN CURSO)  ");
+            lblStatusBadge.setBackground(new Color(0xDBEAFE)); // Light Blue
+            lblStatusBadge.setForeground(new Color(0x1E40AF)); // Dark Blue
+
+            // En Activo: Se bloquea la edición de ejercicios (no se cambia la rutina en marcha)
+            btnAdd.setEnabled(false);
+            btnRemove.setEnabled(false);
+            btnSave.setEnabled(false);
+            btnUpdate.setEnabled(false);
+
+            btnActivate.setEnabled(false);
+            btnComplete.setEnabled(true);  // ¡Habilitado en verde para completar!
+            btnCancel.setEnabled(true);    // Se puede cancelar
+            btnReopen.setEnabled(false);
+
+        } else if ("Completado".equalsIgnoreCase(currentPlanStatus)) {
+            lblStatusBadge.setText("  ESTADO: COMPLETADO  ");
+            lblStatusBadge.setBackground(new Color(0xD1FAE5)); // Light Green
+            lblStatusBadge.setForeground(new Color(0x065F46)); // Dark Green
+
+            // En Completado: Todo es de solo lectura histórica
+            btnAdd.setEnabled(false);
+            btnRemove.setEnabled(false);
+            btnSave.setEnabled(false);
+            btnUpdate.setEnabled(false);
+
+            btnActivate.setEnabled(false);
+            btnComplete.setEnabled(false);
+            btnCancel.setEnabled(false);
+            btnReopen.setEnabled(true);   // Permite reabrir como borrador
+
+        } else if ("Cancelado".equalsIgnoreCase(currentPlanStatus)) {
+            lblStatusBadge.setText("  ESTADO: CANCELADO  ");
+            lblStatusBadge.setBackground(new Color(0xFEE2E2)); // Light Red
+            lblStatusBadge.setForeground(new Color(0x991B1B)); // Dark Red
+
+            btnAdd.setEnabled(false);
+            btnRemove.setEnabled(false);
+            btnSave.setEnabled(false);
+            btnUpdate.setEnabled(false);
+
+            btnActivate.setEnabled(false);
+            btnComplete.setEnabled(false);
+            btnCancel.setEnabled(false);
+            btnReopen.setEnabled(true);   // Permite recuperar a borrador
+
+        } else { // "Borrador"
+            lblStatusBadge.setText("  ESTADO: BORRADOR (EDICIÓN)  ");
+            lblStatusBadge.setBackground(new Color(0xFEF3C7)); // Light Amber
+            lblStatusBadge.setForeground(new Color(0x92400E)); // Dark Amber
+
+            // En Borrador: Edición libre
+            btnAdd.setEnabled(true);
+            btnRemove.setEnabled(true);
+            btnSave.setEnabled(selectedPlanId == -1);
+            btnUpdate.setEnabled(selectedPlanId != -1);
+
+            btnActivate.setEnabled(selectedPlanId != -1); // Se puede activar una vez guardado
+            btnComplete.setEnabled(false);                // ¡BLOQUEADO! No se puede completar en borrador
+            btnCancel.setEnabled(selectedPlanId != -1);
+            btnReopen.setEnabled(false);
+        }
+    }
+
+    // =========================================================
     // MÉTODOS LLAMADOS POR EL CONTROLLER
     // =========================================================
 
@@ -169,18 +308,21 @@ public class TrainingPlanView extends JPanel {
         savedPlansModel.setRowCount(0);
         try {
             while (data != null && data.next()) {
+                String st = data.getString("status");
+                if (st == null || st.trim().isEmpty()) st = "Borrador";
                 savedPlansModel.addRow(new Object[]{
                     data.getInt("id_plan"),
                     data.getString("plan_name"),
                     data.getString("date"),
-                    data.getString("client_name")
+                    data.getString("client_name"),
+                    st
                 });
             }
         } catch (Exception e) { e.printStackTrace(); }
     }
 
     public void showMessage(String msg) {
-        JOptionPane.showMessageDialog(this, msg, "Gym MVC", JOptionPane.INFORMATION_MESSAGE);
+        JOptionPane.showMessageDialog(this, msg, "Gym MVC — State Training Plan", JOptionPane.INFORMATION_MESSAGE);
     }
 
     public void clearFields() {
@@ -191,10 +333,9 @@ public class TrainingPlanView extends JPanel {
         clearExerciseRows();
         tableSavedPlans.clearSelection();
         selectedPlanId = -1;
+        updateStateUI("Borrador");
     }
 
-    // Cargar datos de un plan existente en el formulario
-    // Usa columnas del schema: id_plan, plan_name, date, objective, ci_client
     public void loadPlanForm(ResultSet planData) {
         try {
             if (planData != null && planData.next()) {
@@ -210,12 +351,12 @@ public class TrainingPlanView extends JPanel {
                         break;
                     }
                 }
+                String st = planData.getString("status");
+                updateStateUI(st);
             }
         } catch (Exception e) { e.printStackTrace(); }
     }
 
-    // Cargar los detalles del plan en las filas dinámicas
-    // Usa columnas del schema: id_exercise, sets, reps, rest_time
     public void loadDetailRows(ResultSet detailData) {
         clearExerciseRows();
         try {
@@ -232,22 +373,19 @@ public class TrainingPlanView extends JPanel {
         } catch (Exception e) { e.printStackTrace(); }
     }
 
-    // Columnas usadas del schema Client: ci, first_name, last_name
     public void loadClientOptions(ResultSet data) {
         cmbClient.removeAllItems();
         clientCiList.clear();
         try {
             while (data != null && data.next()) {
                 int ci = data.getInt("ci");
-                String display = ci + " - " + data.getString("first_name")
-                               + " " + data.getString("last_name");
+                String display = ci + " - " + data.getString("first_name") + " " + data.getString("last_name");
                 cmbClient.addItem(display);
                 clientCiList.add(ci);
             }
         } catch (Exception e) { e.printStackTrace(); }
     }
 
-    // Columnas usadas del schema Exercise: id_exercise, name + MuscleGroup.name
     public void loadExerciseOptions(ResultSet data) {
         exerciseItems.clear();
         try {
@@ -258,7 +396,7 @@ public class TrainingPlanView extends JPanel {
                 ));
             }
         } catch (Exception e) { e.printStackTrace(); }
-        // Actualizar combos de filas existentes
+
         for (ExerciseRowPanel row : exerciseRows) {
             ExerciseItem selected = (ExerciseItem) row.cmbExercise.getSelectedItem();
             row.cmbExercise.removeAllItems();
@@ -274,7 +412,6 @@ public class TrainingPlanView extends JPanel {
         }
     }
 
-    // Agregar una nueva fila vacía
     public void addExerciseRow() {
         ExerciseRowPanel row = new ExerciseRowPanel(exerciseRows.size() + 1, exerciseItems);
         exerciseRows.add(row);
@@ -283,7 +420,6 @@ public class TrainingPlanView extends JPanel {
         rowsContainer.repaint();
     }
 
-    // Eliminar la última fila
     public void removeLastExerciseRow() {
         if (!exerciseRows.isEmpty()) {
             ExerciseRowPanel last = exerciseRows.remove(exerciseRows.size() - 1);
@@ -314,43 +450,38 @@ public class TrainingPlanView extends JPanel {
     }
 
     public int getSelectedPlanId() { return selectedPlanId; }
+    public String getCurrentPlanStatus() { return currentPlanStatus; }
 
-    // Retorna int[][] con [exerciseId, sets, reps, restTime, order] por cada fila
-    // Mapeado a columnas del schema: id_exercise, sets, reps, rest_time, exercise_order
     public int[][] getPlanDetailsData() {
         int[][] data = new int[exerciseRows.size()][5];
         for (int i = 0; i < exerciseRows.size(); i++) {
             ExerciseRowPanel row = exerciseRows.get(i);
-            data[i][0] = row.getExerciseId(); // id_exercise
-            data[i][1] = row.getSets();       // sets
-            data[i][2] = row.getReps();       // reps
-            data[i][3] = row.getRestTime();   // rest_time
-            data[i][4] = i + 1;               // exercise_order
+            data[i][0] = row.getExerciseId();
+            data[i][1] = row.getSets();
+            data[i][2] = row.getReps();
+            data[i][3] = row.getRestTime();
+            data[i][4] = i + 1;
         }
         return data;
     }
 
-    // =========================================================
-    // EXPONER BOTONES Y TABLA AL CONTROLLER
-    // =========================================================
-    public JButton getBtnSave()   { return btnSave; }
-    public JButton getBtnUpdate() { return btnUpdate; }
-    public JButton getBtnDelete() { return btnDelete; }
-    public JButton getBtnAdd()    { return btnAdd; }
-    public JButton getBtnRemove() { return btnRemove; }
+    // Exponer botones CRUD y State
+    public JButton getBtnSave()     { return btnSave; }
+    public JButton getBtnUpdate()   { return btnUpdate; }
+    public JButton getBtnDelete()   { return btnDelete; }
+    public JButton getBtnAdd()      { return btnAdd; }
+    public JButton getBtnRemove()   { return btnRemove; }
+    public JButton getBtnActivate() { return btnActivate; }
+    public JButton getBtnComplete() { return btnComplete; }
+    public JButton getBtnCancel()   { return btnCancel; }
+    public JButton getBtnReopen()   { return btnReopen; }
     public JTable  getTableSavedPlans() { return tableSavedPlans; }
 
-    // =========================================================
-    // INNER CLASSES
-    // =========================================================
-
+    // Inner classes
     private static class ExerciseItem {
-        final int    id;
+        final int id;
         final String display;
-        ExerciseItem(int id, String display) {
-            this.id      = id;
-            this.display = display;
-        }
+        ExerciseItem(int id, String display) { this.id = id; this.display = display; }
         @Override public String toString() { return display; }
     }
 
@@ -374,18 +505,15 @@ public class TrainingPlanView extends JPanel {
             txtRest.setFont(UITheme.LABEL_FONT);
             add(numLabel);
             add(cmbExercise);
-            add(UITheme.styledLabel("Sets:"));    add(txtSets);
-            add(UITheme.styledLabel("Reps:"));    add(txtReps);
+            add(UITheme.styledLabel("Sets:"));   add(txtSets);
+            add(UITheme.styledLabel("Reps:"));   add(txtReps);
             add(UITheme.styledLabel("Rest(s):")); add(txtRest);
         }
 
-        // Pre-llenar al cargar plan existente
-        // exerciseId = id_exercise, rest = rest_time (schema)
         void loadData(int exerciseId, int sets, int reps, int rest) {
             for (int i = 0; i < cmbExercise.getItemCount(); i++) {
                 if (cmbExercise.getItemAt(i).id == exerciseId) {
-                    cmbExercise.setSelectedIndex(i);
-                    break;
+                    cmbExercise.setSelectedIndex(i); break;
                 }
             }
             txtSets.setText(String.valueOf(sets));
@@ -397,8 +525,8 @@ public class TrainingPlanView extends JPanel {
             ExerciseItem it = (ExerciseItem) cmbExercise.getSelectedItem();
             return it != null ? it.id : -1;
         }
-        int getSets()     { try { return Integer.parseInt(txtSets.getText().trim()); } catch (Exception e) { return 0; } }
-        int getReps()     { try { return Integer.parseInt(txtReps.getText().trim()); } catch (Exception e) { return 0; } }
-        int getRestTime() { try { return Integer.parseInt(txtRest.getText().trim()); } catch (Exception e) { return 0; } }
+        int getSets()     { try { return Integer.parseInt(txtSets.getText().trim()); } catch(Exception e){return 0;} }
+        int getReps()     { try { return Integer.parseInt(txtReps.getText().trim()); } catch(Exception e){return 0;} }
+        int getRestTime() { try { return Integer.parseInt(txtRest.getText().trim()); } catch(Exception e){return 0;} }
     }
 }
