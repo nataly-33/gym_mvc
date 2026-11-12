@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS TrainingPlan (
     objective TEXT,
     date TEXT NOT NULL,
     ci_client INTEGER NOT NULL,
+    status TEXT DEFAULT 'Borrador',
     FOREIGN KEY (ci_client) REFERENCES Client(ci)
 );
 
@@ -54,5 +55,6 @@ CREATE TABLE IF NOT EXISTS Measurement (
     waist REAL,
     date TEXT NOT NULL,
     ci_client INTEGER NOT NULL,
+    status TEXT DEFAULT 'Borrador',
     FOREIGN KEY (ci_client) REFERENCES Client(ci)
 );

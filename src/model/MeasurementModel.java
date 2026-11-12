@@ -19,7 +19,9 @@ public class MeasurementModel {
         try {
             Connection connection = DatabaseConnection.getInstance().getConnection();
             PreparedStatement ps = connection.prepareStatement(
-                "SELECT * FROM Measurement WHERE ci_client = ? ORDER BY date DESC");
+                "SELECT m.*, c.first_name || ' ' || c.last_name AS client_name " +
+                "FROM Measurement m JOIN Client c ON m.ci_client = c.ci " +
+                "WHERE m.ci_client = ? ORDER BY m.date DESC");
             ps.setInt(1, ci);
             return ps.executeQuery();
         } catch (SQLException e) { e.printStackTrace(); return null; }
