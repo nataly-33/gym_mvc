@@ -3,6 +3,7 @@ package controller;
 import model.ClientModel;
 import model.ExerciseModel;
 import model.TrainingPlanModel;
+import model.state.EstadoBorrador;
 import model.state.PlanContext;
 import view.TrainingPlanView;
 import javax.swing.event.ListSelectionEvent;
@@ -21,7 +22,7 @@ public class TrainingPlanController {
                                   ClientModel       clientModel,
                                   ExerciseModel     exerciseModel) {
         this.view          = view;
-        this.planContext   = new PlanContext();
+        this.planContext   = new PlanContext(new EstadoBorrador());
         this.planModel     = planModel;
         this.clientModel   = clientModel;
         this.exerciseModel = exerciseModel;

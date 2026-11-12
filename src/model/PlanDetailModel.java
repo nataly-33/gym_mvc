@@ -3,7 +3,7 @@ import java.sql.*;
 
 public class PlanDetailModel {
 
-    Connection connection;
+    private Connection connection;
 
     public ResultSet getByPlan(int planId) {
         try {

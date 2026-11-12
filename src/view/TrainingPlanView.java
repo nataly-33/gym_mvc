@@ -10,19 +10,20 @@ import java.util.List;
 public class TrainingPlanView extends JPanel {
 
     // --- Campos del formulario ---
-    private JTextField txtPlanName  = new JTextField(22);
-    private JTextField txtDate      = new JTextField(12);
+    private JTextField txtPlanName  = new JTextField(14);
+    private JTextField txtDate      = new JTextField(10);
     private JComboBox<String> cmbClient = new JComboBox<>();
-    private JTextField txtObjective = new JTextField(35);
+    private JTextField txtObjective = new JTextField(20);
 
     // --- Indicador visual y botones del Patrón State ---
-    private JLabel  lblStatusBadge = new JLabel("  ESTADO: BORRADOR  ", SwingConstants.CENTER);
+    private JLabel  lblStatusBadge = new JLabel(" BORRADOR ", SwingConstants.CENTER);
     private JButton btnActivate    = new JButton("▶ Activar");
     private JButton btnComplete    = new JButton("✔ Completar");
     private JButton btnCancel      = new JButton("✕ Cancelar");
-    private JButton btnReopen      = new JButton("↺ Reabrir Borrador");
+    private JButton btnReopen      = new JButton("↺ Reabrir");
 
     // --- Filas de ejercicios (el "carrito") ---
+    private JTable                 tableDetails;
     private List<ExerciseItem>     exerciseItems = new ArrayList<>();
     private List<ExerciseRowPanel> exerciseRows  = new ArrayList<>();
     private JPanel                 rowsContainer;
@@ -36,8 +37,8 @@ public class TrainingPlanView extends JPanel {
     private List<Integer> clientCiList = new ArrayList<>();
 
     // --- Botones CRUD ---
-    private JButton btnAdd    = new JButton("Add ▼");
-    private JButton btnRemove = new JButton("✕ Remove Last");
+    private JButton btnAdd    = new JButton("+ Add");
+    private JButton btnRemove = new JButton("✕ Remove");
     private JButton btnSave   = new JButton("Save Plan");
     private JButton btnUpdate = new JButton("Update Plan");
     private JButton btnDelete = new JButton("Delete Plan");
@@ -49,7 +50,7 @@ public class TrainingPlanView extends JPanel {
     public TrainingPlanView() {
         setLayout(new BorderLayout(8, 8));
         setBackground(UITheme.CREAM);
-        setBorder(BorderFactory.createEmptyBorder(12, 12, 10, 12));
+        setBorder(BorderFactory.createEmptyBorder(10, 10, 8, 10));
 
         // Estilo de campos
         txtPlanName.setFont(UITheme.LABEL_FONT);
@@ -57,9 +58,22 @@ public class TrainingPlanView extends JPanel {
         txtObjective.setFont(UITheme.LABEL_FONT);
         UITheme.styleComboBox(cmbClient);
 
-        // Estilo de botones CRUD
-        UITheme.styleSecondaryButton(btnAdd);
-        UITheme.styleSecondaryButton(btnRemove);
+        // Estilo de botones Add / Remove compactos
+        btnAdd.setBackground(UITheme.YELLOW);
+        btnAdd.setForeground(UITheme.TEXT);
+        btnAdd.setFont(new Font("SansSerif", Font.BOLD, 12));
+        btnAdd.setPreferredSize(new Dimension(85, 28));
+        btnAdd.setFocusPainted(false);
+        btnAdd.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+        btnRemove.setBackground(UITheme.ORANGE_SOFT);
+        btnRemove.setForeground(UITheme.WHITE);
+        btnRemove.setFont(new Font("SansSerif", Font.BOLD, 12));
+        btnRemove.setPreferredSize(new Dimension(95, 28));
+        btnRemove.setFocusPainted(false);
+        btnRemove.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+        // Estilo de botones CRUD principales
         UITheme.styleSaveButton(btnSave);
         UITheme.styleUpdateButton(btnUpdate);
         UITheme.styleDeleteButton(btnDelete);
@@ -67,14 +81,15 @@ public class TrainingPlanView extends JPanel {
         // Estilo de botones State
         styleStateButtons();
 
-        // Split: 70% izquierda (formulario + filas), 30% derecha (planes guardados)
+        // Split: 60% izquierda (formulario + detalles), 40% derecha (planes guardados con buen espacio)
         JSplitPane split = new JSplitPane(
             JSplitPane.HORIZONTAL_SPLIT,
             buildLeftPanel(),
             buildRightPanel());
-        split.setResizeWeight(0.72);
+        split.setResizeWeight(0.60);
         split.setDividerSize(6);
         split.setBackground(UITheme.CREAM);
+        SwingUtilities.invokeLater(() -> split.setDividerLocation(0.60));
 
         add(split, BorderLayout.CENTER);
         add(buildButtonPanel(), BorderLayout.SOUTH);
@@ -84,39 +99,49 @@ public class TrainingPlanView extends JPanel {
     }
 
     private void styleStateButtons() {
-        lblStatusBadge.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        lblStatusBadge.setFont(new Font("Segoe UI", Font.BOLD, 12));
         lblStatusBadge.setOpaque(true);
         lblStatusBadge.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(0xB8860B), 2),
-            BorderFactory.createEmptyBorder(4, 12, 4, 12)
+            BorderFactory.createLineBorder(new Color(0xB8860B), 1),
+            BorderFactory.createEmptyBorder(3, 8, 3, 8)
         ));
 
-        btnActivate.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        Font stateBtnFont = new Font("Segoe UI", Font.BOLD, 11);
+
+        btnActivate.setFont(stateBtnFont);
         btnActivate.setBackground(new Color(0x3B82F6));
         btnActivate.setForeground(Color.WHITE);
         btnActivate.setFocusPainted(false);
+        btnActivate.setPreferredSize(new Dimension(86, 28));
+        btnActivate.setMargin(new Insets(2, 4, 2, 4));
 
-        btnComplete.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btnComplete.setFont(stateBtnFont);
         btnComplete.setBackground(new Color(0x10B981));
         btnComplete.setForeground(Color.WHITE);
         btnComplete.setFocusPainted(false);
+        btnComplete.setPreferredSize(new Dimension(96, 28));
+        btnComplete.setMargin(new Insets(2, 4, 2, 4));
 
-        btnCancel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btnCancel.setFont(stateBtnFont);
         btnCancel.setBackground(new Color(0xEF4444));
         btnCancel.setForeground(Color.WHITE);
         btnCancel.setFocusPainted(false);
+        btnCancel.setPreferredSize(new Dimension(86, 28));
+        btnCancel.setMargin(new Insets(2, 4, 2, 4));
 
-        btnReopen.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btnReopen.setFont(stateBtnFont);
         btnReopen.setBackground(new Color(0x6B7280));
         btnReopen.setForeground(Color.WHITE);
         btnReopen.setFocusPainted(false);
+        btnReopen.setPreferredSize(new Dimension(82, 28));
+        btnReopen.setMargin(new Insets(2, 4, 2, 4));
     }
 
     // =========================================================
     // PANEL IZQUIERDO: formulario + barra de estado + filas
     // =========================================================
     private JPanel buildLeftPanel() {
-        JPanel panel = new JPanel(new BorderLayout(0, 10));
+        JPanel panel = new JPanel(new BorderLayout(0, 8));
         panel.setBackground(UITheme.CREAM);
 
         // --- Formulario superior ---
@@ -126,11 +151,13 @@ public class TrainingPlanView extends JPanel {
 
         // Fila 0: Barra de Estado (Patrón State)
         gbc.gridy = 0; gbc.gridx = 0; gbc.gridwidth = 1;
-        gbc.insets = new Insets(4, 12, 8, 6);
+        gbc.insets = new Insets(3, 8, 5, 4);
         gbc.anchor = GridBagConstraints.WEST;
-        formPanel.add(UITheme.styledLabel("Lifecycle State:"), gbc);
+        JLabel lblState = UITheme.styledLabel("State:");
+        lblState.setFont(new Font("SansSerif", Font.BOLD, 13));
+        formPanel.add(lblState, gbc);
 
-        JPanel stateBar = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        JPanel stateBar = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
         stateBar.setBackground(UITheme.CREAM);
         stateBar.add(lblStatusBadge);
         stateBar.add(btnActivate);
@@ -139,23 +166,23 @@ public class TrainingPlanView extends JPanel {
         stateBar.add(btnReopen);
 
         gbc.gridx = 1; gbc.gridwidth = 3; gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(4, 0, 8, 12);
+        gbc.insets = new Insets(3, 0, 5, 8);
         formPanel.add(stateBar, gbc);
         gbc.gridwidth = 1;
 
         // Fila 1: Plan Name y Date
-        UITheme.addFormRow2(formPanel, gbc, 1, "Plan Name:", txtPlanName, "Date (yyyy-MM-dd):", txtDate);
+        UITheme.addFormRow2(formPanel, gbc, 1, "Plan Name:", txtPlanName, "Date:", txtDate);
 
         // Fila 2: Client Combo
         gbc.gridy = 2; gbc.gridx = 0; gbc.gridwidth = 1;
         gbc.weightx = 0; gbc.fill = GridBagConstraints.NONE;
         gbc.anchor = GridBagConstraints.WEST;
-        gbc.insets = new Insets(6, 12, 6, 6);
+        gbc.insets = new Insets(4, 8, 4, 4);
         formPanel.add(UITheme.styledLabel("Client:"), gbc);
         gbc.gridx = 1; gbc.gridwidth = 3; gbc.weightx = 1;
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(6, 0, 6, 12);
-        cmbClient.setPreferredSize(new Dimension(0, 32));
+        gbc.insets = new Insets(4, 0, 4, 8);
+        cmbClient.setPreferredSize(new Dimension(0, 28));
         formPanel.add(cmbClient, gbc);
         gbc.gridwidth = 1;
 
@@ -163,11 +190,12 @@ public class TrainingPlanView extends JPanel {
         UITheme.addFormRow(formPanel, gbc, 3, "Objective:", txtObjective);
 
         // --- Botones Add/Remove de detalles ---
-        JPanel addRemovePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 6));
+        JPanel addRemovePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 3));
         addRemovePanel.setBackground(UITheme.CREAM);
         addRemovePanel.add(btnAdd);
         addRemovePanel.add(btnRemove);
-        JLabel hint = UITheme.styledLabel("← Add exercises (Locked if plan is Active or Completed)");
+        JLabel hint = new JLabel("(Solo editable en Borrador)");
+        hint.setFont(new Font("SansSerif", Font.ITALIC, 11));
         hint.setForeground(new Color(0x7A6A30));
         addRemovePanel.add(hint);
 
@@ -184,9 +212,9 @@ public class TrainingPlanView extends JPanel {
             "Exercise Details (Plan Details)",
             javax.swing.border.TitledBorder.LEFT,
             javax.swing.border.TitledBorder.TOP,
-            UITheme.LABEL_FONT, UITheme.TEXT));
+            new Font("SansSerif", Font.BOLD, 13), UITheme.TEXT));
 
-        JPanel centerPanel = new JPanel(new BorderLayout(0, 4));
+        JPanel centerPanel = new JPanel(new BorderLayout(0, 2));
         centerPanel.setBackground(UITheme.CREAM);
         centerPanel.add(addRemovePanel, BorderLayout.NORTH);
         centerPanel.add(rowsScroll, BorderLayout.CENTER);
@@ -202,6 +230,7 @@ public class TrainingPlanView extends JPanel {
     private JPanel buildRightPanel() {
         JPanel panel = UITheme.createSectionPanel("Saved Plans");
         panel.setLayout(new BorderLayout());
+        panel.setMinimumSize(new Dimension(320, 200));
 
         // Columna 4: Status (Patrón State)
         String[] cols = {"ID", "Plan Name", "Date", "Client", "Status"};
@@ -210,10 +239,10 @@ public class TrainingPlanView extends JPanel {
         };
         tableSavedPlans = new JTable(savedPlansModel);
         UITheme.styleTable(tableSavedPlans);
-        tableSavedPlans.getColumnModel().getColumn(0).setPreferredWidth(30);
-        tableSavedPlans.getColumnModel().getColumn(1).setPreferredWidth(110);
+        tableSavedPlans.getColumnModel().getColumn(0).setPreferredWidth(35);
+        tableSavedPlans.getColumnModel().getColumn(1).setPreferredWidth(125);
         tableSavedPlans.getColumnModel().getColumn(2).setPreferredWidth(80);
-        tableSavedPlans.getColumnModel().getColumn(3).setPreferredWidth(100);
+        tableSavedPlans.getColumnModel().getColumn(3).setPreferredWidth(110);
         tableSavedPlans.getColumnModel().getColumn(4).setPreferredWidth(85);
 
         JScrollPane scroll = new JScrollPane(tableSavedPlans);
@@ -236,7 +265,7 @@ public class TrainingPlanView extends JPanel {
         this.currentPlanStatus = (status != null && !status.trim().isEmpty()) ? status : "Borrador";
 
         if ("Activo".equalsIgnoreCase(currentPlanStatus)) {
-            lblStatusBadge.setText("  ESTADO: ACTIVO (EN CURSO)  ");
+            lblStatusBadge.setText(" ACTIVO ");
             lblStatusBadge.setBackground(new Color(0xDBEAFE)); // Light Blue
             lblStatusBadge.setForeground(new Color(0x1E40AF)); // Dark Blue
 
@@ -249,14 +278,14 @@ public class TrainingPlanView extends JPanel {
             btnActivate.setEnabled(false);
             btnComplete.setEnabled(true);  // ¡Habilitado en verde para completar!
             btnCancel.setEnabled(true);    // Se puede cancelar
-            btnReopen.setEnabled(false);
+            btnReopen.setEnabled(true);    // Permite reabrir a Borrador para editar
 
         } else if ("Completado".equalsIgnoreCase(currentPlanStatus)) {
-            lblStatusBadge.setText("  ESTADO: COMPLETADO  ");
+            lblStatusBadge.setText(" COMPLETADO ");
             lblStatusBadge.setBackground(new Color(0xD1FAE5)); // Light Green
             lblStatusBadge.setForeground(new Color(0x065F46)); // Dark Green
 
-            // En Completado: Todo es de solo lectura histórica
+            // En Completado: Todo es de solo lectura histórica, estado final definitivo
             btnAdd.setEnabled(false);
             btnRemove.setEnabled(false);
             btnSave.setEnabled(false);
@@ -265,10 +294,10 @@ public class TrainingPlanView extends JPanel {
             btnActivate.setEnabled(false);
             btnComplete.setEnabled(false);
             btnCancel.setEnabled(false);
-            btnReopen.setEnabled(true);   // Permite reabrir como borrador
+            btnReopen.setEnabled(false);   // Bloqueado: Completado es estado final definitivo
 
         } else if ("Cancelado".equalsIgnoreCase(currentPlanStatus)) {
-            lblStatusBadge.setText("  ESTADO: CANCELADO  ");
+            lblStatusBadge.setText(" CANCELADO ");
             lblStatusBadge.setBackground(new Color(0xFEE2E2)); // Light Red
             lblStatusBadge.setForeground(new Color(0x991B1B)); // Dark Red
 
@@ -283,7 +312,7 @@ public class TrainingPlanView extends JPanel {
             btnReopen.setEnabled(true);   // Permite recuperar a borrador
 
         } else { // "Borrador"
-            lblStatusBadge.setText("  ESTADO: BORRADOR (EDICIÓN)  ");
+            lblStatusBadge.setText(" BORRADOR ");
             lblStatusBadge.setBackground(new Color(0xFEF3C7)); // Light Amber
             lblStatusBadge.setForeground(new Color(0x92400E)); // Dark Amber
 
@@ -429,7 +458,7 @@ public class TrainingPlanView extends JPanel {
         }
     }
 
-    private void clearExerciseRows() {
+    public void clearExerciseRows() {
         exerciseRows.clear();
         rowsContainer.removeAll();
         rowsContainer.revalidate();
@@ -487,27 +516,51 @@ public class TrainingPlanView extends JPanel {
 
     private class ExerciseRowPanel extends JPanel {
         JComboBox<ExerciseItem> cmbExercise = new JComboBox<>();
-        JTextField txtSets = new JTextField(5);
-        JTextField txtReps = new JTextField(5);
-        JTextField txtRest = new JTextField(5);
+        JTextField txtSets = new JTextField(3);
+        JTextField txtReps = new JTextField(3);
+        JTextField txtRest = new JTextField(3);
 
         ExerciseRowPanel(int rowNum, List<ExerciseItem> items) {
-            setLayout(new FlowLayout(FlowLayout.LEFT, 8, 4));
+            setLayout(new FlowLayout(FlowLayout.LEFT, 5, 2));
             setBackground(UITheme.CREAM);
-            setMaximumSize(new Dimension(Integer.MAX_VALUE, 46));
+            setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
+
             JLabel numLabel = UITheme.styledLabel("#" + rowNum);
-            numLabel.setPreferredSize(new Dimension(28, 28));
-            cmbExercise.setPreferredSize(new Dimension(240, 32));
+            numLabel.setFont(new Font("SansSerif", Font.BOLD, 12));
+            numLabel.setPreferredSize(new Dimension(20, 24));
+
+            cmbExercise.setPreferredSize(new Dimension(170, 26));
+            cmbExercise.setFont(new Font("SansSerif", Font.PLAIN, 12));
             UITheme.styleComboBox(cmbExercise);
             for (ExerciseItem item : items) cmbExercise.addItem(item);
-            txtSets.setFont(UITheme.LABEL_FONT);
-            txtReps.setFont(UITheme.LABEL_FONT);
-            txtRest.setFont(UITheme.LABEL_FONT);
+
+            Font fieldFont = new Font("SansSerif", Font.PLAIN, 12);
+            Font labelFont = new Font("SansSerif", Font.BOLD, 12);
+
+            txtSets.setFont(fieldFont);
+            txtSets.setPreferredSize(new Dimension(36, 26));
+
+            txtReps.setFont(fieldFont);
+            txtReps.setPreferredSize(new Dimension(36, 26));
+
+            txtRest.setFont(fieldFont);
+            txtRest.setPreferredSize(new Dimension(40, 26));
+
+            JLabel lblSets = new JLabel("Sets:");
+            lblSets.setFont(labelFont);
+            JLabel lblReps = new JLabel("Reps:");
+            lblReps.setFont(labelFont);
+            JLabel lblRest = new JLabel("Rest(s):");
+            lblRest.setFont(labelFont);
+
             add(numLabel);
             add(cmbExercise);
-            add(UITheme.styledLabel("Sets:"));   add(txtSets);
-            add(UITheme.styledLabel("Reps:"));   add(txtReps);
-            add(UITheme.styledLabel("Rest(s):")); add(txtRest);
+            add(lblSets);
+            add(txtSets);
+            add(lblReps);
+            add(txtReps);
+            add(lblRest);
+            add(txtRest);
         }
 
         void loadData(int exerciseId, int sets, int reps, int rest) {

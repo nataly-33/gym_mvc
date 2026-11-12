@@ -4,8 +4,12 @@ public class PlanContext {
 
     private EstadoPlan estadoActual;
 
-    public PlanContext() {
-        this.estadoActual = new EstadoBorrador();
+    public PlanContext(EstadoPlan estadoInicial) {                                      
+        if (estadoInicial == null) {                                                    
+            this.estadoActual = new EstadoBorrador();                                   
+        } else {
+    this.estadoActual = estadoInicial;
+        }
     }
 
     public void setEstado(EstadoPlan nuevoEstado) {
